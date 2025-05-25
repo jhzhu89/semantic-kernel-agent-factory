@@ -1,0 +1,111 @@
+agent_factory:
+  agents:
+    GeneralAssistant:
+      name: "GeneralAssistant"
+      instructions: |
+        You are a helpful, friendly AI assistant. 
+        Answer questions clearly and concisely. 
+        If you don't know something, say so.
+      model: "gpt-4.1"
+      model_settings:
+        temperature: 0.7
+        # No response schema for text responses
+      mcp_servers: ["time"]
+
+    KubernetesAssistant:
+      name: "KubernetesAssistant"
+      instructions: |
+        You have access to multiple tool functions for querying different aspects of the Kubernetes cluster, 
+        Prometheus monitoring system, and time-related operations. Before providing a final answer, please use 
+        as many appropriate tools as possible to gather all relevant information. Do not stop after a single 
+        call – chain multiple tool actions if needed to ensure a thorough response. When using tools that 
+        require time parameters, always use the time server to get the precise current time.
+      model: "gpt-4.1"
+      model_settings:
+        temperature: 1.5
+        # No response schema for text responses
+      mcp_servers: ["time", "kubernetes"]
+
+
+    PythonCoder:
+      name: "PythonCoder"
+      instructions: |
+        You are a Python coding expert. 
+        Always provide working code examples and explain your solutions.
+        Be concise and focus on best practices.
+      model: "gpt-4.1"
+      model_settings:
+        temperature: 1.2
+        #response_json_schema:
+        #  name: "PythonResponse"
+        #  json_schema_definition:
+        #    type: "object"
+        #    properties:
+        #      code:
+        #        type: "string"
+        #        description: "Python code implementation"
+        #      explanation:
+        #        type: "string"
+        #        description: "Explanation of the code"
+        #    required: ["code", "explanation"]
+        #    additionalProperties: false
+      mcp_servers: ["time"]
+
+    AzureAssistant:
+      name: "AzureAssistant"
+      instructions: |
+        You are a helpful, friendly AI assistant. You can access various Azure resources.
+        Return structured responses according to the schema.
+      model: "gpt-4.1"
+      model_settings:
+        temperature: 1
+        response_json_schema:
+          name: "AzureResponse"
+          json_schema_definition:
+            type: "object"
+            properties:
+              status:
+                type: "string"
+                enum: ["input_required", "completed", "error"]
+              message:
+                type: "string"
+            required: ["status", "message"]
+            additionalProperties: false
+      mcp_servers: ["time"]
+
+  mcp_servers:
+    time:
+      type: "stdio"
+      command: "python"
+      args: ["-m", "mcp_server_time"]
+      env:
+        DEBUG: "true"
+      encoding: "utf-8"
+      #azure:
+      #  type: "stdio"
+      #  command: "npx"
+      #  args: ["-y", "@azure/mcp@latest", "server", "start"]
+      #  env:
+      #    AZURE_MCP_INCLUDE_PRODUCTION_CREDENTIALS: "true"
+    kubernetes:
+      type: "stdio"
+      command: "mcp-server-kubernetes"
+      env:
+        DEBUG: "true"
+      encoding: "utf-8"
+
+  openai_models:
+    gpt-4.1:
+      model: "gpt-4.1"
+      endpoint: "https://jiahzhu-openai-svc.openai.azure.com/"
+      api_key: "c698b44f9cd44035aa94fda0a710d78f"
+      api_version: "2025-01-01-preview"
+
+chat_history:
+  agents:
+    PythonCoder:
+      threshold_count: 500
+      target_count: 20
+    AzureAssistant:
+      threshold_count: 1000
+      target_count: 10

@@ -1,0 +1,265 @@
+$background: #1e1e1e;
+$surface: #252526;
+$surface-lighten-1: #2d2d30;
+$surface-lighten-2: #383a3f;
+$primary: #007acc;
+$primary-lighten-1: #289dfb;
+$primary-darken-1: #005a9e;
+$secondary: #3e3e42;
+$secondary-lighten-1: #515156;
+$secondary-darken-1: #2d2d30;
+$text: #d4d4d4;
+$text-primary: #ffffff;
+$text-secondary: #9d9d9d;
+$warning: #eab700;
+$warning-darken-1: #9c7200;
+$error: #f14c4c;
+$error-darken-1: #c72c2c;
+$success: #4ec9b0;
+$success-darken-1: #3a9d7a;
+$purple: #c586c0;
+$purple-darken-1: #a06b9a;
+$orange: #ce9178;
+$orange-darken-1: #b07b62;
+
+Screen {
+    layout: vertical;
+    background: $background;
+    color: $text;
+}
+
+#main-container {
+    height: 1fr;
+    layout: horizontal;
+}
+
+#chat-tabs {
+    height: 1fr;
+}
+
+TabPane {
+    padding: 0;
+    layout: vertical;
+    height: 1fr;
+    width: 100%;
+}
+
+.status-container {
+    height: 3;
+    background: $primary-darken-1;
+    border: solid $primary;
+}
+
+.status-bar {
+    text-align: right;
+    padding: 0 1;
+}
+
+.panel-header {
+    background: $primary;
+    color: $text-primary;
+    text-style: bold;
+    padding: 1;
+    text-align: center;
+}
+
+.chat-log {
+    height: 1fr;
+    width: 100%;
+    border: round $secondary;
+    padding: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-background: $surface;
+    scrollbar-color: $primary;
+    scrollbar-size: 1 1;
+    layout: vertical;
+    align: left top;
+}
+
+.input-container {
+    background: $surface;
+    border: round $secondary;
+    padding: 1;
+    height: auto;
+    min-height: 3;
+    max-height: 8;
+}
+
+.message-input {
+    background: transparent;
+    color: $text;
+    border: none;
+    height: auto;
+    min-height: 1;
+    max-height: 5;
+    scrollbar-background: $surface;
+    scrollbar-color: $primary;
+}
+
+ChatBubbleContainer {
+    layout: horizontal;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    margin: 1;
+    padding: 0;
+    content-align: center middle;
+}
+
+.spacer { 
+    width: 1fr; 
+    height: auto;
+    min-height: 0;
+}
+
+.user-container .bubble {
+    max-width: 60%;
+    min-width: 10;
+    width: auto;
+    height: auto;
+    background: $primary;
+    color: $text-primary;
+    border: round $primary-darken-1;
+    text-align: right;
+    padding: 1 2;
+}
+
+.assistant-container .bubble {
+    max-width: 80%;
+    min-width: 10;
+    width: auto;
+    height: auto;
+    background: $surface-lighten-1;
+    border: round $secondary;
+    text-align: left;
+    padding: 1 2;
+}
+
+.system-container .bubble {
+    max-width: 80%;
+    min-width: 10;
+    width: auto;
+    height: auto;
+    background: $orange;
+    border: round $orange-darken-1;
+    text-align: left;
+    padding: 1 2;
+    color: $text-primary;
+}
+
+.error-container .bubble {
+    max-width: 80%;
+    min-width: 10;
+    width: auto;
+    height: auto;
+    background: $error;
+    border: round $error-darken-1;
+    text-align: left;
+    padding: 1 2;
+    color: $text-primary;
+}
+
+.function-call-container .bubble {
+    max-width: 80%;
+    min-width: 10;
+    width: auto;
+    height: auto;
+    background: $warning;
+    border: round $warning-darken-1;
+    text-align: left;
+    padding: 1 2;
+    color: $text-primary;
+    text-style: italic;
+}
+
+.function-result-container .bubble {
+    max-width: 80%;
+    min-width: 10;
+    width: auto;
+    height: auto;
+    background: $success;
+    border: round $success-darken-1;
+    text-align: left;
+    padding: 1 2;
+    color: $text-primary;
+    text-style: italic;
+}
+
+.agent-instructions-container .bubble {
+    max-width: 80%;
+    min-width: 10;
+    width: auto;
+    height: auto;
+    background: $purple;
+    border: round $purple-darken-1;
+    text-align: left;
+    padding: 1 2;
+    color: $text-primary;
+}
+
+#agent-list {
+    height: 1fr;
+    scrollbar-background: $surface;
+    scrollbar-color: $primary;
+    background: transparent !important;
+}
+
+#agent-list:hover {
+    background: transparent !important;
+}
+
+#agent-list:focus {
+    background: transparent !important;
+}
+
+#agent-list.-active {
+    background: transparent !important;
+}
+
+#agent-list > ListItem {
+    padding: 1;
+    background: transparent;
+    color: $text;
+    border: none;
+    margin: 0 0 1 0;
+}
+
+#agent-list > ListItem:hover {
+    background: $surface-lighten-1;
+    color: $text-primary;
+}
+
+#agent-list > ListItem.-highlighted {
+    background: $primary;
+    color: $text-primary;
+}
+
+#agent-list > ListItem.selected {
+    background: $surface-lighten-2;
+    color: $text-primary;
+    border-left: solid thick $primary;
+}
+
+/* Default panel layout - panel is visible */
+#agent-panel {
+    width: 25%;
+    border: solid $secondary;
+    background: $surface;
+    padding: 1;
+}
+
+#chat-container {
+    width: 75%;
+    height: 1fr;
+}
+
+/* When main-container has 'hide-panel' class, hide panel and expand chat */
+#main-container.hide-panel #agent-panel {
+    display: none;
+    width: 0;
+}
+
+#main-container.hide-panel #chat-container {
+    width: 100%;
+}

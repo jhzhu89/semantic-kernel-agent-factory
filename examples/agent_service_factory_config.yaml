@@ -1,0 +1,226 @@
+# Agent Service Factory Configuration
+# Uses the new AgentServiceFactoryConfig structure with separate service_factory and agent_factory
+
+service_factory:
+  services:
+    GeneralAssistant:
+      card:
+        name: "GeneralAssistant"
+        description: "A helpful, friendly AI assistant that answers questions clearly and concisely"
+        version: "1.0.0"
+        url: "http://localhost:8000/general/"
+        defaultInputModes:
+          - "text/plain"
+        defaultOutputModes:
+          - "text/plain"
+        capabilities:
+          pushNotifications: false
+          stateTransitionHistory: false
+          streaming: true
+        skills:
+          - id: "general_assistance"
+            name: "General Assistance"
+            description: "Provides helpful, friendly assistance and answers questions clearly and concisely"
+            tags:
+              - "general_assistance"
+              - "question_answering"
+              - "information_retrieval"
+              - "conversational_ai"
+            examples:
+              - "What is the capital of France?"
+              - "How does photosynthesis work?"
+              - "I don't understand quantum physics"
+              - "Can you explain the difference between machine learning and artificial intelligence?"
+              - "What are some good books to read for beginners in philosophy?"
+            inputModes:
+              - "text/plain"
+            outputModes:
+              - "text/plain"
+      chat_history_threshold: 0
+      chat_history_target: 0
+      path_prefix: "/general"
+
+    PythonCoder:
+      card:
+        name: "PythonCoder"
+        description: "A Python coding expert that provides working code examples and explanations in JSON format"
+        version: "1.0.0"
+        url: "http://localhost:8000/python/"
+        defaultInputModes:
+          - "text/plain"
+        defaultOutputModes:
+          - "application/json"
+        capabilities:
+          pushNotifications: false
+          stateTransitionHistory: false
+          streaming: true
+        skills:
+          - id: "python_coding"
+            name: "Python Coding Expert"
+            description: "Provides working Python code examples and explanations with best practices in structured JSON format"
+            tags:
+              - "code_generation"
+              - "python_programming"
+              - "code_explanation"
+              - "best_practices"
+              - "structured_output"
+            examples:
+              - "Write a function to calculate fibonacci numbers"
+              - "How do I read a CSV file in Python?"
+              - "Create a class for a bank account"
+              - "Implement a binary search algorithm"
+              - "How to handle exceptions in Python?"
+              - "Write a decorator for timing function execution"
+              - "Create a REST API using FastAPI"
+            inputModes:
+              - "text/plain"
+            outputModes:
+              - "application/json"
+      chat_history_threshold: 0
+      chat_history_target: 0
+      path_prefix: "/python"
+      enable_token_streaming: false
+
+    AzureAssistant:
+      card:
+        name: "AzureAssistant"
+        description: "A helpful AI assistant with access to Azure resources that returns structured responses"
+        version: "1.0.0"
+        url: "http://localhost:8000/azure/"
+        defaultInputModes:
+          - "text/plain"
+        defaultOutputModes:
+          - "application/json"
+        capabilities:
+          pushNotifications: false
+          stateTransitionHistory: false
+          streaming: true
+        skills:
+          - id: "azure_integration"
+            name: "Azure Assistant"
+            description: "Provides help with Azure services and returns structured responses with status and message"
+            tags:
+              - "azure_integration"
+              - "cloud_services"
+              - "structured_responses"
+              - "status_tracking"
+              - "azure_resources"
+            examples:
+              - "List my Azure storage accounts"
+              - "Create a new resource group called 'test-rg'"
+              - "Deploy a virtual machine"
+              - "Check status of resource group 'production-rg'"
+              - "Scale up my app service plan"
+              - "Show me Azure costs for this month"
+              - "Configure auto-scaling for my web app"
+            inputModes:
+              - "text/plain"
+            outputModes:
+              - "application/json"
+      chat_history_threshold: 1000
+      chat_history_target: 10
+      path_prefix: "/azure"
+
+agent_factory:
+  agents:
+    GeneralAssistant:
+      name: "GeneralAssistant"
+      instructions: |
+        You are a helpful, friendly AI assistant. 
+        Answer questions clearly and concisely. 
+        If you don't know something, say so.
+      model: "gpt-4.1"
+      model_settings:
+        temperature: 0.7
+        response_json_schema:
+          name: "CurrentTime"
+          json_schema_definition:
+            type: "object"
+            properties:
+              time:
+                type: "string"
+                description: "Current time"
+            required: ["time"]
+            additionalProperties: false
+      mcp_servers: ["time"]
+
+    PythonCoder:
+      name: "PythonCoder"
+      instructions: |
+        You are a Python coding expert. 
+        Always provide working code examples and explain your solutions.
+        Be concise and focus on best practices.
+        
+        You must call the time service to get the current time.
+
+        Ensure your code is:
+        - Syntactically correct and runnable
+        - Well-commented where appropriate
+        - Following Python best practices (PEP 8)
+        - Include error handling when relevant
+        - Provide multiple approaches when beneficial
+      model: "gpt-4.1"
+      model_settings:
+        temperature: 0.5
+        response_json_schema:
+          name: "PythonResponse"
+          json_schema_definition:
+            type: "object"
+            properties:
+              code:
+                type: "string"
+                description: "Python code implementation"
+              explanation:
+                type: "string"
+                description: "Explanation of the code"
+            required: ["code", "explanation"]
+            additionalProperties: false
+      mcp_servers: ["time"]
+
+    AzureAssistant:
+      name: "AzureAssistant"
+      instructions: |
+        You are a helpful, friendly AI assistant with expertise in Azure cloud services.
+        You can help with Azure resource management, configuration, and troubleshooting.
+        
+        You MUST return your response in the following JSON format:
+        {
+          "status": "input_required" | "completed" | "error",
+          "message": "Detailed response message"
+        }
+        
+        Status guidelines:
+        - "completed": Use when you can provide a complete answer or successfully perform an action
+        - "input_required": Use when you need more information from the user to proceed
+        - "error": Use when there's an error, resource not found, or permission issues
+        
+        Always provide helpful, actionable information in your message field.
+      model: "gpt-4.1"
+      model_settings:
+        temperature: 1.0
+        response_json_schema:
+          name: "AzureResponse"
+          json_schema_definition:
+            type: "object"
+            properties:
+              status:
+                type: "string"
+                enum: ["input_required", "completed", "error"]
+              message:
+                type: "string"
+            required: ["status", "message"]
+            additionalProperties: false
+      mcp_servers: ["time"]
+
+  mcp_servers:
+    time:
+      type: "stdio"
+      command: "python"
+      args: ["-m", "mcp_server_time"]
+      env:
+        DEBUG: "true"
+      encoding: "utf-8"
+
+  openai_models:
+    gpt-4.1:
+      model: "gpt-4.1"
