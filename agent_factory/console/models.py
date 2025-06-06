@@ -104,6 +104,23 @@ class IntermediateMessage(Message):
         self.content = content
 
 
+class HandoffAgentMessage(Message):
+
+    def __init__(self, source_agent: str, target_agent: str, content: str) -> None:
+        super().__init__()
+        self.source_agent = source_agent
+        self.target_agent = target_agent
+        self.content = content
+
+
+class HandoffFinalOutput(Message):
+
+    def __init__(self, agent_name: str, final_result: str) -> None:
+        super().__init__()
+        self.agent_name = agent_name
+        self.final_result = final_result
+
+
 class ErrorMessage(Message):
 
     def __init__(self, agent_name: str, error: str) -> None:

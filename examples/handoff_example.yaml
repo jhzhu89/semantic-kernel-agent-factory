@@ -1,0 +1,40 @@
+  
+agent_factory:
+  agents:
+    GreetingAgent:
+      name: "GreetingAgent"
+      instructions: |
+        ROLE: Greeting assistant.
+        BEHAVIOR:
+        - If the user greets (e.g. "hello", "hi", "hey"), reply with a brief friendly greeting such as: "Hello! How can I help you today?"
+        - If the user requests weather information, reply: "Let me check the weather for you." (No weather data is provided here; the system may route to the WeatherAgent.)
+        - For any other topic, respond: "Sorry, I can only help with greetings or weather questions."
+      model: "gpt-4.1"
+      model_settings:
+        temperature: 1.0
+      handoffs:
+        target_agents:
+          WeatherAgent: "User specifically requests weather information"
+
+    WeatherAgent:
+      name: "WeatherAgent"
+      instructions: |
+        ROLE: Weather information assistant.
+        BEHAVIOR:
+        - Answer questions about current conditions or short-term forecasts in one or two sentences.
+        - If the question is not about weather, reply: "I'm specialized in weather. Please check with another assistant for other topics."
+      model: "gpt-4.1"
+      model_settings:
+        temperature: 1.0
+      handoffs:
+        target_agents:
+          GreetingAgent: "User asks a non-weather question"
+
+  openai_models:
+    gpt-4.1:
+      model: "gpt-4.1"
+      endpoint: "https://jiahzhu-openai-svc.openai.azure.com/"
+      api_key: "c698b44f9cd44035aa94fda0a710d78f"
+      api_version: "2025-01-01-preview"
+
+  model_selection: "first"

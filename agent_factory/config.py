@@ -56,12 +56,17 @@ class ModelSelectStrategy(str, enum.Enum):
     quality = "quality"
 
 
+class HandoffConfig(BaseModel):
+    target_agents: Dict[str, str] = Field(default_factory=dict)
+
+
 class AgentConfig(BaseModel):
     name: Optional[str] = Field(default=None, pattern=AGENT_NAME_PATTERN)
     instructions: str
     mcp_servers: List[str] = Field(default_factory=list)
     model: Optional[str] = None
     model_settings: Optional[ModelSettings] = None
+    handoffs: Optional[HandoffConfig] = None
 
 
 class AgentFactoryConfig(BaseSettings):

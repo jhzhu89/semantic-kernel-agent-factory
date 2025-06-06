@@ -8,7 +8,8 @@ from typing import Any, Dict, List, Optional, Type
 from opentelemetry import trace
 from pydantic import BaseModel, Field, create_model
 from semantic_kernel import Kernel
-from semantic_kernel.agents import ChatCompletionAgent
+from semantic_kernel.agents import ChatCompletionAgent, OrchestrationHandoffs, HandoffOrchestration
+from semantic_kernel.agents.runtime import InProcessRuntime
 from semantic_kernel.connectors.ai.function_choice_behavior import FunctionChoiceBehavior
 from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
 from semantic_kernel.functions import KernelArguments
@@ -32,6 +33,8 @@ class AgentFactory:
         self._service_ids: Dict[str, str] = {}
         self._provider: Optional[MCPProvider] = None
         self._registry = ServiceRegistry(config.openai_models)
+        self._handoff_orchestrations: Dict[str, HandoffOrchestration] = {}
+        self._runtime: Optional[InProcessRuntime] = None
 
     async def __aenter__(self):
         await self._stack.__aenter__()
@@ -40,10 +43,14 @@ class AgentFactory:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         try:
+            if self._runtime:
+                self._runtime.stop_when_idle()
             self._agents.clear()
             self._response_models.clear()
             self._service_ids.clear()
+            self._handoff_orchestrations.clear()
             self._kernel = None
+            self._runtime = None
         except Exception as e:
             logger.error(f"Error during agent factory cleanup: {e}")
         finally:
@@ -61,6 +68,21 @@ class AgentFactory:
     def get_all_agents(self) -> Dict[str, ChatCompletionAgent]:
         return self._agents.copy()
 
+    def has_handoff_orchestration(self, agent_name: str) -> bool:
+        result = agent_name in self._handoff_orchestrations
+        logger.info(f"has_handoff_orchestration({agent_name}) = {result}")
+        logger.info(f"Available handoff orchestrations: {list(self._handoff_orchestrations.keys())}")
+        return result
+
+    def get_handoff_orchestration(self, agent_name: str) -> Optional[HandoffOrchestration]:
+        orchestration = self._handoff_orchestrations.get(agent_name)
+        logger.info(f"get_handoff_orchestration({agent_name}) = {orchestration}")
+        return orchestration
+
+    def get_runtime(self) -> Optional[InProcessRuntime]:
+        logger.info(f"get_runtime() = {self._runtime}")
+        return self._runtime
+
     async def _initialize(self):
         if self._kernel is not None:
             return
@@ -70,8 +92,13 @@ class AgentFactory:
             MCPProvider(self._config.mcp_servers)
         )
 
+        self._runtime = InProcessRuntime()
+        self._runtime.start()
+
         for config in self._config.agents.values():
             await self._create_agent(config)
+
+        await self._create_handoff_orchestrations()
 
     async def _create_agent(self, config: AgentConfig):
         if config.name is None:
@@ -212,3 +239,69 @@ class AgentFactory:
                 return Literal[tuple(enum_values)]  # type: ignore
 
         return python_type
+
+    async def _create_handoff_orchestrations(self):
+        """Create handoff orchestrations for agents with handoff configurations."""
+        logger.info("Creating handoff orchestrations...")
+        
+        # Find all agents that have handoff configurations
+        agents_with_handoffs = {
+            name: config for name, config in self._config.agents.items()
+            if config.handoffs and config.handoffs.target_agents
+        }
+        
+        logger.info(f"Found {len(agents_with_handoffs)} agents with handoff configurations: {list(agents_with_handoffs.keys())}")
+
+        if not agents_with_handoffs:
+            logger.info("No agents with handoff configurations found")
+            return
+
+        # Create orchestration for each source agent
+        for agent_name, config in agents_with_handoffs.items():
+            logger.info(f"Creating handoff orchestration for source agent: {agent_name}")
+            
+            if not config.handoffs or not config.handoffs.target_agents:
+                continue
+                
+            # Build the list of target agents for this source agent
+            target_agents = []
+            for target_name in config.handoffs.target_agents.keys():
+                if target_name in self._agents:
+                    target_agents.append(self._agents[target_name])
+                    logger.info(f"Added target agent: {target_name}")
+                else:
+                    logger.warning(f"Target agent {target_name} not found for handoff from {agent_name}")
+            
+            if not target_agents:
+                logger.warning(f"No valid target agents found for {agent_name}")
+                continue
+                
+            # Create members list: source agent + all target agents
+            source_agent = self._agents[agent_name]
+            members = [source_agent] + target_agents
+            logger.info(f"Orchestration members for {agent_name}: {[agent.name for agent in members]}")
+            
+            # Build handoffs configuration using add_many
+            handoffs = OrchestrationHandoffs()
+            
+            # Prepare target agents dictionary for add_many
+            target_agent_dict = {}
+            for target_name, description in config.handoffs.target_agents.items():
+                if target_name in self._agents:
+                    target_agent_dict[target_name] = description
+                    logger.info(f"Preparing handoff: {agent_name} -> {target_name} ({description})")
+            
+            if target_agent_dict:
+                handoffs = handoffs.add_many(agent_name, target_agent_dict)
+                logger.info(f"Added {len(target_agent_dict)} handoffs for {agent_name}")
+            
+            # Create orchestration for this source agent
+            orchestration = HandoffOrchestration(
+                members=members,
+                handoffs=handoffs
+            )
+            
+            self._handoff_orchestrations[agent_name] = orchestration
+            logger.info(f"Created and assigned HandoffOrchestration to agent: {agent_name}")
+        
+        logger.info(f"Created handoff orchestrations for {len(self._handoff_orchestrations)} agents: {list(self._handoff_orchestrations.keys())}")

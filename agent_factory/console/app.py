@@ -13,6 +13,8 @@ from .models import (
     AgentSelected,
     ChatMessage,
     ErrorMessage,
+    HandoffAgentMessage,
+    HandoffFinalOutput,
     IntermediateMessage,
     MessageType,
     StreamingChunk,
@@ -71,6 +73,8 @@ class AgentFactoryConsole(App):
             StreamingChunk: self.handle_streaming_chunk,
             StreamingEnded: self.handle_streaming_ended,
             IntermediateMessage: self.handle_intermediate_message,
+            HandoffAgentMessage: self.handle_handoff_agent_message,
+            HandoffFinalOutput: self.handle_handoff_final_output,
             ErrorMessage: self.handle_error_message,
         }
 
@@ -175,6 +179,13 @@ class AgentFactoryConsole(App):
 
     async def handle_intermediate_message(self, event: IntermediateMessage) -> None:
         self._add_message_to_tab(event.agent_name, event.message_type, event.content)
+
+    async def handle_handoff_agent_message(self, event: HandoffAgentMessage) -> None:
+        content = f"[{event.source_agent}]: {event.content}"
+        self._add_message_to_tab(event.target_agent, MessageType.ASSISTANT, content)
+
+    async def handle_handoff_final_output(self, event: HandoffFinalOutput) -> None:
+        self._add_message_to_tab(event.agent_name, MessageType.ASSISTANT, event.final_result)
 
     async def handle_error_message(self, event: ErrorMessage) -> None:
         self._add_message_to_tab(event.agent_name, MessageType.ERROR, event.error)
