@@ -177,17 +177,9 @@ class TestIntegration:
         )
         
         with patch('agent_factory.factory.MCPProvider') as mock_provider:
-            # Create a simple object instead of Mock to avoid validation issues
-            class MockPlugin:
-                def __init__(self, name, description):
-                    self.name = name
-                    self.description = description
-                    self.functions = {}
-            
-            mock_plugin = MockPlugin("time", "Time server plugin")
-            
             mock_provider_instance = Mock()
-            mock_provider_instance._plugins = {"time": mock_plugin}
+            mock_provider_instance._plugins = {}
+            mock_provider_instance.get_plugin.return_value = None
             mock_provider.return_value.__aenter__.return_value = mock_provider_instance
             
             async with AgentFactory(config) as factory:

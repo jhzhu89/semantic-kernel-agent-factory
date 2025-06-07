@@ -6,8 +6,6 @@ $primary: #007acc;
 $primary-lighten-1: #289dfb;
 $primary-darken-1: #005a9e;
 $secondary: #3e3e42;
-$secondary-lighten-1: #515156;
-$secondary-darken-1: #2d2d30;
 $text: #d4d4d4;
 $text-primary: #ffffff;
 $text-secondary: #9d9d9d;
@@ -103,7 +101,6 @@ ChatBubbleContainer {
     height: auto;
     min-height: 0;
     margin: 1;
-    padding: 0;
     content-align: center middle;
 }
 
@@ -113,88 +110,62 @@ ChatBubbleContainer {
     min-height: 0;
 }
 
-.user-container .bubble {
-    max-width: 60%;
+.bubble {
     min-width: 10;
     width: auto;
     height: auto;
+    text-align: left;
+    padding: 1 2;
+}
+
+.user-container .bubble {
+    max-width: 60%;
     background: $primary;
     color: $text-primary;
     border: round $primary-darken-1;
     text-align: right;
-    padding: 1 2;
 }
 
 .assistant-container .bubble {
     max-width: 80%;
-    min-width: 10;
-    width: auto;
-    height: auto;
     background: $surface-lighten-1;
     border: round $secondary;
-    text-align: left;
-    padding: 1 2;
 }
 
 .system-container .bubble {
     max-width: 80%;
-    min-width: 10;
-    width: auto;
-    height: auto;
     background: $orange;
     border: round $orange-darken-1;
-    text-align: left;
-    padding: 1 2;
     color: $text-primary;
 }
 
 .error-container .bubble {
     max-width: 80%;
-    min-width: 10;
-    width: auto;
-    height: auto;
     background: $error;
     border: round $error-darken-1;
-    text-align: left;
-    padding: 1 2;
     color: $text-primary;
 }
 
 .function-call-container .bubble {
     max-width: 80%;
-    min-width: 10;
-    width: auto;
-    height: auto;
     background: $warning;
     border: round $warning-darken-1;
-    text-align: left;
-    padding: 1 2;
     color: $text-primary;
     text-style: italic;
 }
 
 .function-result-container .bubble {
     max-width: 80%;
-    min-width: 10;
-    width: auto;
-    height: auto;
     background: $success;
     border: round $success-darken-1;
-    text-align: left;
-    padding: 1 2;
     color: $text-primary;
     text-style: italic;
 }
 
 .agent-instructions-container .bubble {
     max-width: 80%;
-    min-width: 10;
-    width: auto;
-    height: auto;
     background: $purple;
     border: round $purple-darken-1;
-    text-align: left;
-    padding: 1 2;
     color: $text-primary;
 }
 
@@ -205,14 +176,8 @@ ChatBubbleContainer {
     background: transparent !important;
 }
 
-#agent-list:hover {
-    background: transparent !important;
-}
-
-#agent-list:focus {
-    background: transparent !important;
-}
-
+#agent-list:hover,
+#agent-list:focus,
 #agent-list.-active {
     background: transparent !important;
 }
@@ -242,13 +207,6 @@ ChatBubbleContainer {
 }
 
 /* Default panel layout - panel is visible */
-#agent-panel {
-    width: 25%;
-    border: solid $secondary;
-    background: $surface;
-    padding: 1;
-}
-
 #chat-container {
     width: 75%;
     height: 1fr;
@@ -262,4 +220,152 @@ ChatBubbleContainer {
 
 #main-container.hide-panel #chat-container {
     width: 100%;
+}
+
+#logs-overlay {
+    dock: right;
+    width: 80%;
+    layer: overlay;
+    border: solid $primary;
+    background: $surface;
+    padding: 1;
+}
+
+#logs-overlay.hidden {
+    display: none;
+}
+
+#logs-overlay.visible {
+    display: block;
+}
+
+#logs-header {
+    height: 3;
+    layout: horizontal;
+    background: $primary-darken-1;
+    padding: 0 1;
+}
+
+.logs-title {
+    width: 1fr;
+    text-style: bold;
+    color: $text-primary;
+}
+
+.logs-hint {
+    text-align: right;
+    color: $text-secondary;
+    text-style: italic;
+}
+
+#logs-content {
+    height: 1fr;
+    background: $background;
+    border: solid $secondary;
+    scrollbar-gutter: stable;
+    overflow-x: auto;
+    overflow-y: auto;
+    text-align: left;
+    padding: 1;
+    /* RichLog automatically supports text selection */
+}
+
+/* Agent Panel Layout */
+#agent-panel {
+    width: 25%;
+    border: solid $secondary;
+    background: $surface;
+    padding: 1;
+    layout: vertical;
+    height: 1fr;
+}
+
+/* Agent List Section - takes up 2/3 of the panel */
+.agent-list-container {
+    height: 2fr;
+    border-bottom: solid $secondary;
+    margin-bottom: 1;
+    padding-bottom: 1;
+    layout: vertical;
+    overflow: hidden;
+}
+
+.agent-list-container .panel-header {
+    height: auto;
+    min-height: 3;
+    margin-bottom: 1;
+}
+
+.agent-list-container #agent-list {
+    height: 1fr;
+    scrollbar-gutter: stable;
+}
+
+/* MCP Status Section - takes up 1/3 of the panel */
+.mcp-status-container {
+    height: 1fr;
+    layout: vertical;
+    min-height: 8;
+}
+
+.mcp-status-container .panel-header {
+    height: auto;
+    min-height: 3;
+    margin-bottom: 1;
+}
+
+#mcp-list {
+    height: 1fr;
+    scrollbar-background: $surface;
+    scrollbar-color: $primary;
+    background: transparent !important;
+}
+
+#mcp-list:hover,
+#mcp-list:focus,
+#mcp-list.-active {
+    background: transparent !important;
+}
+
+#mcp-list > ListItem {
+    padding: 1;
+    background: transparent;
+    color: $text;
+    border: none;
+    margin: 0 0 1 0;
+}
+
+#mcp-list > ListItem:hover {
+    background: $surface-lighten-1;
+    color: $text-primary;
+}
+
+#mcp-list > ListItem.-highlighted {
+    background: $primary;
+    color: $text-primary;
+}
+
+#mcp-list > ListItem.selected {
+    background: $surface-lighten-2;
+    color: $text-primary;
+    border-left: solid thick $primary;
+}
+
+/* Refresh button styling */
+#refresh-mcp {
+    height: 3;
+    background: $primary-darken-1;
+    color: $text-primary;
+    text-style: bold;
+    border: solid $primary;
+}
+
+#refresh-mcp:hover {
+    background: $primary;
+}
+
+#refresh-mcp:disabled {
+    background: $secondary;
+    color: $text-secondary;
+    border: solid $secondary;
 }

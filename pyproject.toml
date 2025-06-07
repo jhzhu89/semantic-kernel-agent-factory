@@ -1,34 +1,45 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
+requires = ["setuptools>=68.0", "setuptools-scm>=8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "semantic-kernel-agent-factory"
-version = "0.0.1"
+dynamic = ["version"]
 description = "SDK for creating and managing OpenAI agents with MCP server integration"
 readme = "README.md"
+license = {text = "MIT"}
 authors = [
     {name = "Jiahao Zhu", email = "jiahzhu@outlook.com"},
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 keywords = ["semantic-kernel", "agent", "mcp", "server", "factory", "sdk", "service", "sse", "http"]
 requires-python = ">=3.10"
 dependencies = [
+    "mcp>=1.9.0",
+
     # Core semantic kernel and agent functionality
     "semantic-kernel>=1.31.0",
     "pydantic>=2.11.4", 
     "pydantic-settings>=2.9.1",
     
-    # Essential utilities identified by depfinder
+    # Essential utilities
     "python-dotenv>=1.1.0",
     "click>=8.2.1",
     "typing-extensions>=4.13.2",
+    
+    # UI framework for console app
+    "textual>=0.85.0",
     
     # Async support
     "anyio>=4.9.0",
@@ -42,13 +53,57 @@ dependencies = [
     "opentelemetry-sdk>=1.33.1",
 ]
 
+[project.optional-dependencies]
+# Development dependencies
+dev = [
+    # Testing framework
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    
+    # Code formatting and linting
+    "black>=25.1.0",
+    "isort>=5.12.0",
+    "ruff>=0.1.0",
+    
+    # Type checking
+    "mypy>=1.16.0",
+    "types-PyYAML>=6.0.12.20250516",
+    "types-click>=7.1.0",
+
+    "flake8>=7.2.0",
+]
+
+# Web service dependencies (if you plan to add web features)
+web = [
+    "fastapi>=0.115.12",
+    "uvicorn>=0.34.2",
+    "httpx>=0.28.1",
+]
+
+# Extended monitoring and observability
+monitoring = [
+    "opentelemetry-instrumentation-fastapi>=0.41b0",
+    "opentelemetry-exporter-prometheus>=1.12.0rc1",
+    "prometheus-client>=0.19.0",
+]
+
+# Documentation dependencies
+docs = [
+    "sphinx>=7.1.0",
+    "sphinx-rtd-theme>=2.0.0",
+    "myst-parser>=2.0.0",
+    "sphinx-autodoc-typehints>=1.24.0",
+]
+
 [project.urls]
-Repository = "https://github.com/jiahzhu1989/semantic-kernel-agent-factory"
-Issues = "https://github.com/jiahzhu1989/semantic-kernel-agent-factory/issues"
-Documentation = "https://github.com/jiahzhu1989/semantic-kernel-agent-factory/tree/main/docs"
+Repository = "https://github.com/jhzhu89/semantic-kernel-agent-factory"
+Issues = "https://github.com/jhzhu89/semantic-kernel-agent-factory/issues"
+Documentation = "https://github.com/jhzhu89/semantic-kernel-agent-factory/tree/main/docs"
 
 [project.scripts]
-agent-factory = "agent_factory.console:console"
+agent-factory = "agent_factory.console.commands:console"
 
 [tool.setuptools]
 package-dir = {"" = "."}
@@ -62,6 +117,11 @@ exclude = ["tests*", "examples*", "scripts*"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["__pycache__", "*.py[cod]"]
+
+[tool.setuptools_scm]
+write_to = "agent_factory/_version.py"
+version_scheme = "post-release"
+local_scheme = "node-and-date"
 
 [tool.black]
 line-length = 100
@@ -83,6 +143,8 @@ extend-exclude = '''
   | node_modules
   | migrations
   | docs/_build
+  # Auto-generated files
+  | agent_factory/_version\.py
 )/
 '''
 
@@ -94,6 +156,7 @@ include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
+skip = ["agent_factory/_version.py"]
 known_first_party = ["agent_factory"]
 known_third_party = [
     "semantic_kernel",
@@ -194,6 +257,7 @@ exclude_lines = [
 [tool.ruff]
 target-version = "py310"
 line-length = 100
+exclude = ["agent_factory/_version.py"]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings

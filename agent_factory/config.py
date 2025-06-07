@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from a2a.types import AgentCapabilities, AgentCard, AgentProvider, AgentSkill, SecurityScheme
 from pydantic import BaseModel, Field, HttpUrl, SecretStr, model_validator
@@ -69,6 +69,11 @@ class AgentFactoryConfig(BaseSettings):
     mcp_servers: Dict[str, MCPServerConfig] = Field(default_factory=dict)
     openai_models: Dict[str, AzureOpenAIConfig] = Field(default_factory=dict)
     model_selection: ModelSelectStrategy = ModelSelectStrategy.first
+    # MCP failure handling strategy
+    mcp_failure_strategy: Literal["strict", "lenient"] = Field(
+        default="strict",
+        description="How to handle MCP plugin connection failures. 'strict': exit on any failure, 'lenient': continue with working plugins",
+    )
 
     model_config = SettingsConfigDict(
         env_nested_delimiter="__", env_prefix="AGENT_FACTORY_", env_file=".env", extra="ignore"

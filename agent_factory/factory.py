@@ -83,9 +83,29 @@ class AgentFactory:
         self._service_ids[config.name] = service_id
 
         settings = self._create_execution_settings(config, service_id)
-        plugins = None
+        plugins: Optional[List[Any]] = None
         if config.mcp_servers and self._provider is not None:
-            plugins = [self._provider._plugins[name] for name in config.mcp_servers]
+            # Only include successfully connected plugins, skip failed ones
+            plugins = []
+            failed_plugins = []
+
+            for name in config.mcp_servers:
+                plugin = self._provider.get_plugin(name)
+                if plugin is not None:
+                    plugins.append(plugin)
+                else:
+                    failed_plugins.append(name)
+
+            # Log any failed plugins
+            if failed_plugins:
+                logger.warning(
+                    f"Agent '{config.name}': MCP servers {failed_plugins} are not connected and will be skipped. "
+                    f"Connected plugins: {[name for name in config.mcp_servers if name not in failed_plugins]}"
+                )
+
+            # If no plugins are available, set plugins to None
+            if not plugins:
+                plugins = None
 
         start_time = time.perf_counter()
         with tracer.start_as_current_span("agent.create", attributes={"agent": config.name}):

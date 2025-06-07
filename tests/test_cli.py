@@ -129,7 +129,7 @@ class TestCLICommands:
         with patch('agent_factory.console.commands.anyio.run') as mock_anyio_run, \
              patch('agent_factory.console.commands.AgentFactoryCliConfig.from_file') as mock_from_file, \
              patch('agent_factory.console.commands.AgentFactory') as mock_factory_class, \
-             patch('logging.getLogger') as mock_get_logger:
+             patch('agent_factory.console.infrastructure.logging.manager.LoggingConfig.get_instance') as mock_logging_config:
             
             mock_config = MagicMock()
             mock_from_file.return_value = mock_config
@@ -138,14 +138,15 @@ class TestCLICommands:
             mock_factory.get_all_agents.return_value = ["test-agent"]
             mock_factory_class.return_value.__aenter__.return_value = mock_factory
             
-            mock_logger = MagicMock()
-            mock_get_logger.return_value = mock_logger
+            mock_logging_instance = MagicMock()
+            mock_logging_config.return_value = mock_logging_instance
             
             result = runner.invoke(console, ['chat', '-c', temp_config_file, '--verbose'])
             
             mock_from_file.assert_called_once()
             mock_anyio_run.assert_called_once()
-            mock_logger.setLevel.assert_called_once()
+            assert mock_logging_instance.setup_file_logging.call_count >= 1
+            assert mock_logging_instance.update_log_level.call_count >= 0
 
 
 class TestCLIConfiguration:

@@ -21,8 +21,11 @@ from .service_factory import AgentServiceFactory
 try:
     __version__ = _v("semantic-kernel-agent-factory")
 except Exception:
-    # Fallback version when package is not installed
-    __version__ = "0.0.1"
+    # Fallback to version file when package is not installed
+    try:
+        from ._version import version as __version__
+    except ImportError:
+        __version__ = "0.0.1"
 
 __all__ = [
     "AgentFactory",

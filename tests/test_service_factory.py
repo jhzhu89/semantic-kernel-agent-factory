@@ -115,12 +115,18 @@ class TestAgentServiceFactory:
         assert service_factory._owns_agent_factory == True
         assert service_factory._agent_factory is None  # Should be None before entering context
         
-        # Test that entering the context creates the agent factory
-        async with service_factory as sf:
-            # The _agent_factory should now be set to a real AgentFactory instance
-            assert sf._agent_factory is not None
-            assert isinstance(sf._agent_factory, AgentFactory)
-            assert sf._owns_agent_factory == True
+        # Mock MCPProvider to avoid connection issues
+        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+            mock_provider_instance = Mock()
+            mock_provider_instance._plugins = {}
+            mock_provider.return_value.__aenter__.return_value = mock_provider_instance
+            
+            # Test that entering the context creates the agent factory
+            async with service_factory as sf:
+                # The _agent_factory should now be set to a real AgentFactory instance
+                assert sf._agent_factory is not None
+                assert isinstance(sf._agent_factory, AgentFactory)
+                assert sf._owns_agent_factory == True
 
     @pytest.mark.asyncio
     async def test_create_application(self, mock_agent_factory, a2a_service_config):

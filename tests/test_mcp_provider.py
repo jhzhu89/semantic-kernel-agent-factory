@@ -53,15 +53,15 @@ class TestMCPProvider:
         with patch('agent_factory.mcp_server.provider.MCPStdioPlugin') as mock_stdio:
             mock_stdio.side_effect = Exception("Connection failed")
             
-            # The exception should be raised during context entry
-            with pytest.raises(Exception, match="Connection failed"):
+            with pytest.raises(RuntimeError, match="No MCP plugins could be connected"):
                 async with MCPProvider(failing_config) as provider:
                     pass
 
     @pytest.mark.asyncio
     async def test_mcp_provider_empty_configs(self):
-        async with MCPProvider({}) as provider:
-            assert len(provider._plugins) == 0
+        with pytest.raises(RuntimeError, match="No MCP plugins could be connected"):
+            async with MCPProvider({}) as provider:
+                pass
 
     @pytest.mark.asyncio
     async def test_mcp_provider_stack_cleanup_error(self):
@@ -84,8 +84,7 @@ class TestMCPProvider:
             with patch.object(provider._stack, 'enter_async_context') as mock_enter:
                 mock_enter.side_effect = Exception("Stack error")
                 
-                # This should raise an exception during context entry
-                with pytest.raises(Exception, match="Stack error"):
+                with pytest.raises(RuntimeError, match="No MCP plugins could be connected"):
                     async with provider:
                         pass
 
