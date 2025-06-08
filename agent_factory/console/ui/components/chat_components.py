@@ -4,8 +4,8 @@ from datetime import datetime
 from typing import Optional
 
 from textual import on
+from textual.binding import Binding
 from textual.containers import Container
-from textual.events import Key
 from textual.widgets import Static, TextArea
 
 from ...domain.models import (
@@ -25,25 +25,19 @@ MESSAGE_TYPE_ICONS = {
 
 
 class MessageInput(TextArea):
-    @on(Key)
-    async def handle_message_input_keys(self, event: Key) -> None:
-        if not self.has_focus:
-            await super()._on_key(event)
-            return
+    BINDINGS = [
+        Binding("ctrl+enter,ctrl+j", "submit_message", "Submit message", show=False),
+        Binding("escape", "clear_input", "Clear input", show=False),
+    ]
 
-        if event.key in ("ctrl+enter", "ctrl+j"):
-            content = self.text.strip()
-            if content:
-                self.post_message(MessageSubmitted(content))
-                self.clear()
-                event.prevent_default()
-                event.stop()
-        elif event.key == "escape":
+    def action_submit_message(self) -> None:
+        content = self.text.strip()
+        if content:
+            self.post_message(MessageSubmitted(content))
             self.clear()
-            event.prevent_default()
-            event.stop()
-        else:
-            await super()._on_key(event)
+
+    def action_clear_input(self) -> None:
+        self.clear()
 
 
 class ChatBubbleContainer(Container):
