@@ -113,7 +113,7 @@ include = ["agent_factory*"]
 exclude = ["tests*", "examples*", "scripts*"]
 
 [tool.setuptools.package-data]
-"agent_factory" = ["py.typed"]
+"agent_factory" = ["py.typed", "**/*.tcss"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["__pycache__", "*.py[cod]"]
