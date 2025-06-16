@@ -71,26 +71,27 @@ agent_factory:
                 type: "string"
             required: ["status", "message"]
             additionalProperties: false
-      mcp_servers: ["time"]
+      mcp_servers: ["time","azure"]
 
-  mcp_servers:
-    time:
-      type: "stdio"
-      command: "python"
-      args: ["-m", "mcp_server_time"]
-      env:
-        DEBUG: "true"
-      encoding: "utf-8"
-      #azure:
-      #  type: "stdio"
-      #  command: "npx"
-      #  args: ["-y", "@azure/mcp@latest", "server", "start"]
-      #  env:
-      #    AZURE_MCP_INCLUDE_PRODUCTION_CREDENTIALS: "true"
-    kubernetes:
-      type: "sse"
-      url: "http://localhost:3001/sse"
-      encoding: "utf-8"
+  mcp:
+    servers:
+      time:
+        type: "stdio"
+        command: "python"
+        args: ["-m", "mcp_server_time"]
+        env:
+          DEBUG: "true"
+        encoding: "utf-8"
+      azure:
+        type: "stdio"
+        command: "npx"
+        args: ["-y", "@azure/mcp@latest", "server", "start"]
+        env:
+          AZURE_MCP_INCLUDE_PRODUCTION_CREDENTIALS: "true"
+      kubernetes:
+        type: "streamable_http"
+        url: "http://localhost:3001/mcp"
+        encoding: "utf-8"
 
   openai_models:
     gpt-4.1:

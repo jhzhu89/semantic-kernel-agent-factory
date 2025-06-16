@@ -59,9 +59,9 @@ class TestMCPProvider:
 
     @pytest.mark.asyncio
     async def test_mcp_provider_empty_configs(self):
-        with pytest.raises(RuntimeError, match="No MCP plugins could be connected"):
-            async with MCPProvider({}) as provider:
-                pass
+        # Empty configs should not raise an error, just create provider with no plugins
+        async with MCPProvider({}) as provider:
+            assert len(provider._plugins) == 0
 
     @pytest.mark.asyncio
     async def test_mcp_provider_stack_cleanup_error(self):
@@ -103,33 +103,33 @@ class TestMCPProvider:
                 assert provider._plugins["test"] == mock_plugin_instance
 
     @pytest.mark.asyncio
-    async def test_mcp_provider_sse_plugin_creation(self):
-        sse_config = {
-            "sse_server": MCPServerConfig(
-                type="sse",
+    async def test_mcp_provider_streamable_http_plugin_creation(self):
+        streamable_http = {
+            "streamable_http_server": MCPServerConfig(
+                type="streamable_http",
                 url="https://example.com/mcp",
                 timeout=10,
-                description="Test SSE server"
+                description="Test HTTP server"
             )
         }
         
-        with patch('agent_factory.mcp_server.provider.MCPSsePlugin') as mock_sse:
+        with patch('agent_factory.mcp_server.provider.MCPStreamableHttpPlugin') as mock_streamable:
             mock_plugin = AsyncMock()
             mock_plugin_instance = AsyncMock()
             mock_plugin.__aenter__.return_value = mock_plugin_instance
-            mock_sse.return_value = mock_plugin
+            mock_streamable.return_value = mock_plugin
             
-            async with MCPProvider(sse_config) as provider:
-                mock_sse.assert_called_once_with(
-                    name="sse_server",
+            async with MCPProvider(streamable_http) as provider:
+                mock_streamable.assert_called_once_with(
+                    name="streamable_http_server",
                     url="https://example.com/mcp",
                     request_timeout=10,
                     headers=None,
-                    description="Test SSE server"
+                    description="Test HTTP server",
                 )
-                assert "sse_server" in provider._plugins
+                assert "streamable_http_server" in provider._plugins
                 # The provider stores the result of __aenter__, not the plugin itself
-                assert provider._plugins["sse_server"] == mock_plugin_instance
+                assert provider._plugins["streamable_http_server"] == mock_plugin_instance
 
     def test_mcp_provider_plugins_access(self, mcp_configs):
         provider = MCPProvider(mcp_configs)

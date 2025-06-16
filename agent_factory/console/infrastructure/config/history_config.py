@@ -8,7 +8,7 @@ import yaml
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from ....config import AgentFactoryConfig
+from ....core.config import AgentFactoryConfig
 
 
 class AgentHistoryConfig(BaseModel):

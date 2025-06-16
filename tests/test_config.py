@@ -1,12 +1,15 @@
 import pytest
 from pydantic import ValidationError
-from agent_factory.config import (
+from agent_factory import (
     AgentConfig,
     AgentFactoryConfig,
     AzureOpenAIConfig,
     ModelSettings,
     ResponseSchema,
-    ModelSelectStrategy,
+    ModelSelectStrategy
+)
+
+from agent_factory.service.config import(
     A2AAgentConfig,
     A2AServiceConfig,
     ConfigurableAgentCard,
@@ -265,7 +268,7 @@ class TestAgentFactoryConfig:
         assert config.model_selection == ModelSelectStrategy.first
 
     def test_agent_factory_config_with_mcp_servers(self):
-        from agent_factory.mcp_server.config import MCPServerConfig
+        from agent_factory.mcp_server.config import MCPServerConfig, MCPConfig
         
         agent_config = AgentConfig(
             name="test-agent",
@@ -280,27 +283,28 @@ class TestAgentFactoryConfig:
             )
         }
         
-        mcp_servers = {
-            "time": {
-                "type": "stdio",
-                "command": "python",
-                "args": ["-m", "mcp_server_time"]
+        mcp_config = MCPConfig(
+            servers={
+                "time": MCPServerConfig(
+                    type="stdio",
+                    command="python",
+                    args=["-m", "mcp_server_time"]
+                )
             }
-        }
+        )
         
         config = AgentFactoryConfig(
             agents={"test-agent": agent_config},
             openai_models=openai_config,
-            mcp_servers=mcp_servers,
+            mcp=mcp_config,
             model_selection=ModelSelectStrategy.cost
         )
         
-        # Check that mcp_servers were converted to MCPServerConfig objects
-        assert "time" in config.mcp_servers
-        assert isinstance(config.mcp_servers["time"], MCPServerConfig)
-        assert config.mcp_servers["time"].type == "stdio"
-        assert config.mcp_servers["time"].command == "python"
-        assert config.mcp_servers["time"].args == ["-m", "mcp_server_time"]
+        assert "time" in config.mcp.servers
+        assert isinstance(config.mcp.servers["time"], MCPServerConfig)
+        assert config.mcp.servers["time"].type == "stdio"
+        assert config.mcp.servers["time"].command == "python"
+        assert config.mcp.servers["time"].args == ["-m", "mcp_server_time"]
         assert config.model_selection == ModelSelectStrategy.cost
 
 

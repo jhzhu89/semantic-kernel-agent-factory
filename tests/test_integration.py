@@ -3,12 +3,17 @@ import asyncio
 from unittest.mock import Mock, patch
 from agent_factory import (
     AgentFactory,
-    AgentServiceFactory,
     AgentConfig,
     AgentFactoryConfig,
-    SemanticKernelAgentExecutor,
+    AzureOpenAIConfig,
+    ModelSelectStrategy
 )
-from agent_factory.config import AzureOpenAIConfig, ModelSelectStrategy
+from agent_factory.mcp_server.config import MCPConfig, MCPServerConfig
+
+from agent_factory.service import (
+    AgentServiceFactory,
+    SemanticKernelAgentExecutor
+)
 
 
 class TestIntegration:
@@ -40,7 +45,7 @@ class TestIntegration:
 
     @pytest.mark.asyncio
     async def test_agent_factory_full_lifecycle(self, complete_config):
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(complete_config) as factory:
@@ -57,7 +62,7 @@ class TestIntegration:
 
     @pytest.mark.asyncio
     async def test_executor_with_real_agent(self, complete_config):
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(complete_config) as factory:
@@ -78,7 +83,7 @@ class TestIntegration:
 
     @pytest.mark.asyncio
     async def test_service_factory_integration(self, complete_config):
-        from agent_factory.config import A2AServiceConfig, A2AAgentConfig, ConfigurableAgentCard
+        from agent_factory.service.config import A2AServiceConfig, A2AAgentConfig, ConfigurableAgentCard
         
         a2a_config = A2AServiceConfig(
             services={
@@ -91,13 +96,13 @@ class TestIntegration:
             }
         )
         
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(complete_config) as factory:
-                with patch('agent_factory.service_factory.InMemoryTaskStore'):
-                    with patch('agent_factory.service_factory.DefaultRequestHandler'):
-                        with patch('agent_factory.service_factory.A2AStarletteApplication') as mock_app_factory:
+                with patch('agent_factory.service.service_factory.InMemoryTaskStore'):
+                    with patch('agent_factory.service.service_factory.DefaultRequestHandler'):
+                        with patch('agent_factory.service.service_factory.A2AStarletteApplication') as mock_app_factory:
                             mock_app = Mock()
                             mock_app_factory.return_value.build.return_value = mock_app
                             
@@ -139,7 +144,7 @@ class TestIntegration:
             }
         )
         
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(config) as factory:
@@ -167,16 +172,18 @@ class TestIntegration:
                     endpoint="https://test.openai.azure.com/"
                 )
             },
-            mcp_servers={
-                "time": {
-                    "type": "stdio",
-                    "command": "python",
-                    "args": ["-m", "mcp_server_time"]
+            mcp=MCPConfig(
+                servers={
+                    "time": MCPServerConfig(
+                        type="stdio",
+                        command="python",
+                        args=["-m", "mcp_server_time"]
+                    )
                 }
-            }
+            )
         )
         
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider_instance = Mock()
             mock_provider_instance._plugins = {}
             mock_provider_instance.get_plugin.return_value = None
@@ -188,7 +195,7 @@ class TestIntegration:
 
     @pytest.mark.asyncio
     async def test_error_handling_invalid_agent(self, complete_config):
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(complete_config) as factory:
@@ -197,7 +204,7 @@ class TestIntegration:
 
     @pytest.mark.asyncio
     async def test_concurrent_agent_access(self, complete_config):
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(complete_config) as factory:
@@ -218,7 +225,7 @@ class TestIntegration:
 
     @pytest.mark.asyncio
     async def test_service_factory_error_recovery(self):
-        from agent_factory.config import A2AServiceConfig, A2AAgentConfig, ConfigurableAgentCard, AgentServiceFactoryConfig
+        from agent_factory.service.config import A2AServiceConfig, A2AAgentConfig, ConfigurableAgentCard, AgentServiceFactoryConfig
         
         bad_config = AgentServiceFactoryConfig(
             agent_factory=AgentFactoryConfig(
@@ -249,7 +256,7 @@ class TestIntegration:
             )
         )
         
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             service_factory = AgentServiceFactory(bad_config)

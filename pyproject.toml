@@ -23,37 +23,34 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-keywords = ["semantic-kernel", "agent", "mcp", "server", "factory", "sdk", "service", "sse", "http"]
+keywords = ["semantic-kernel", "agent", "mcp", "server", "factory", "sdk", "service", "streamable_http", "http"]
 requires-python = ">=3.10"
 dependencies = [
-    "mcp>=1.9.0",
-
-    # Core semantic kernel and agent functionality
-    "semantic-kernel>=1.31.0",
+    # Core MCP and semantic kernel functionality
+    "mcp>=1.9.3",
+    "semantic-kernel>=1.33.0",
     "pydantic>=2.11.4", 
     "pydantic-settings>=2.9.1",
     
-    # Essential utilities
     "python-dotenv>=1.1.0",
-    "click>=8.2.1",
     "typing-extensions>=4.13.2",
-    
-    # UI framework for console app
-    "textual>=0.85.0",
-    
-    # Async support
-    "anyio>=4.9.0",
-    
-    # AgentServiceFactory dependencies
-    "a2a-sdk>=0.2.4",
-    "starlette>=0.46.2",
-    
-    # Observability (core telemetry support)
-    "opentelemetry-api>=1.33.1",
-    "opentelemetry-sdk>=1.33.1",
+    "aiocache>=0.12.3",
 ]
 
 [project.optional-dependencies]
+# Console CLI dependencies
+console = [
+    "click>=8.2.1",
+    "textual>=0.85.0",
+    "anyio>=4.9.0",
+]
+
+# Service factory dependencies (AgentServiceFactory)
+service = [
+    "a2a-sdk>=0.2.4",
+    "starlette>=0.46.2",
+]
+
 # Development dependencies
 dev = [
     # Testing framework
@@ -75,18 +72,10 @@ dev = [
     "flake8>=7.2.0",
 ]
 
-# Web service dependencies (if you plan to add web features)
-web = [
-    "fastapi>=0.115.12",
-    "uvicorn>=0.34.2",
-    "httpx>=0.28.1",
-]
-
-# Extended monitoring and observability
-monitoring = [
-    "opentelemetry-instrumentation-fastapi>=0.41b0",
-    "opentelemetry-exporter-prometheus>=1.12.0rc1",
-    "prometheus-client>=0.19.0",
+# All optional features
+all = [
+    "semantic-kernel-agent-factory[console]",
+    "semantic-kernel-agent-factory[service]",
 ]
 
 # Documentation dependencies
@@ -101,9 +90,6 @@ docs = [
 Repository = "https://github.com/jhzhu89/semantic-kernel-agent-factory"
 Issues = "https://github.com/jhzhu89/semantic-kernel-agent-factory/issues"
 Documentation = "https://github.com/jhzhu89/semantic-kernel-agent-factory/tree/main/docs"
-
-[project.scripts]
-agent-factory = "agent_factory.console.commands:console"
 
 [tool.setuptools]
 package-dir = {"" = "."}
@@ -199,7 +185,6 @@ module = [
     "a2a.*",
     "mcp.*",
     "semantic_kernel.*",
-    "httpx_sse.*",
     "opentelemetry.*",
 ]
 ignore_missing_imports = true
@@ -279,3 +264,9 @@ ignore = [
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*" = ["ARG001", "S101"]
+
+# Scripts requiring optional dependencies
+# Note: agent-factory command requires console dependencies
+# Install with: pip install semantic-kernel-agent-factory[console]  
+[project.scripts]
+agent-factory = "agent_factory._console_entry:main"

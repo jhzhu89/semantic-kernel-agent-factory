@@ -1,22 +1,16 @@
 from importlib.metadata import version as _v
 
-from .config import (
-    A2AAgentConfig,
-    A2AServiceConfig,
+# Import core functionality (always available)
+from .core import (
     AgentConfig,
+    AgentFactory,
     AgentFactoryConfig,
-    AgentServiceFactoryConfig,
-    ConfigurableAgentCard,
+    AzureOpenAIConfig,
+    ModelSelectStrategy,
+    ModelSettings,
+    ResponseSchema,
+    ServiceRegistry,
 )
-from .executor import SemanticKernelAgentExecutor
-from .factory import AgentFactory
-from .function_events import (
-    FunctionCallEvent,
-    FunctionEvent,
-    FunctionEventType,
-    FunctionResultEvent,
-)
-from .service_factory import AgentServiceFactory
 
 try:
     __version__ = _v("semantic-kernel-agent-factory")
@@ -27,19 +21,18 @@ except Exception:
     except ImportError:
         __version__ = "0.0.1"
 
+# Core exports (always available)
 __all__ = [
+    # Core factory classes
     "AgentFactory",
-    "AgentServiceFactory",
-    "AgentFactoryConfig",
+    "ServiceRegistry",
+    # Configuration classes
     "AgentConfig",
-    "ConfigurableAgentCard",
-    "A2AServiceConfig",
-    "A2AAgentConfig",
-    "AgentServiceFactoryConfig",
-    "SemanticKernelAgentExecutor",
-    "FunctionCallEvent",
-    "FunctionResultEvent",
-    "FunctionEvent",
-    "FunctionEventType",
+    "AgentFactoryConfig",
+    "AzureOpenAIConfig",
+    "ModelSettings",
+    "ModelSelectStrategy",
+    "ResponseSchema",
+    # Version
     "__version__",
 ]

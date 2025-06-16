@@ -1,14 +1,16 @@
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
-from agent_factory.config import (
-    AgentConfig,
+from agent_factory import (
+    AgentFactory,
+    AgentConfig
+)
+from agent_factory.service import (
     A2AAgentConfig,
     A2AServiceConfig,
     ConfigurableAgentCard,
+    AgentServiceFactory,
     AgentServiceFactoryConfig
 )
-from agent_factory.service_factory import AgentServiceFactory
-from agent_factory.factory import AgentFactory
 
 
 class TestAgentServiceFactory:
@@ -77,7 +79,7 @@ class TestAgentServiceFactory:
             instructions="Test instructions"
         )
         
-        from agent_factory.config import AzureOpenAIConfig, AgentFactoryConfig
+        from agent_factory.core.config import AzureOpenAIConfig, AgentFactoryConfig
         openai_config = {
             "gpt-4": AzureOpenAIConfig(
                 model="gpt-4",
@@ -116,7 +118,7 @@ class TestAgentServiceFactory:
         assert service_factory._agent_factory is None  # Should be None before entering context
         
         # Mock MCPProvider to avoid connection issues
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider_instance = Mock()
             mock_provider_instance._plugins = {}
             mock_provider.return_value.__aenter__.return_value = mock_provider_instance
@@ -130,8 +132,8 @@ class TestAgentServiceFactory:
 
     @pytest.mark.asyncio
     async def test_create_application(self, mock_agent_factory, a2a_service_config):
-        with patch('agent_factory.service_factory.Mount') as mock_mount:
-            with patch('agent_factory.service_factory.Starlette') as mock_starlette:
+        with patch('agent_factory.service.service_factory.Mount') as mock_mount:
+            with patch('agent_factory.service.service_factory.Starlette') as mock_starlette:
                 mock_app = Mock()
                 mock_starlette.return_value = mock_app
                 
@@ -150,10 +152,10 @@ class TestAgentServiceFactory:
         mock_agent_factory.get_agent.return_value = mock_agent
         mock_agent_factory.get_agent_service_id.return_value = "gpt-4"
         
-        with patch('agent_factory.service_factory.SemanticKernelAgentExecutor') as mock_executor:
-            with patch('agent_factory.service_factory.InMemoryTaskStore') as mock_task_store:
-                with patch('agent_factory.service_factory.DefaultRequestHandler') as mock_handler:
-                    with patch('agent_factory.service_factory.A2AStarletteApplication') as mock_app_factory:
+        with patch('agent_factory.service.service_factory.SemanticKernelAgentExecutor') as mock_executor:
+            with patch('agent_factory.service.service_factory.InMemoryTaskStore') as mock_task_store:
+                with patch('agent_factory.service.service_factory.DefaultRequestHandler') as mock_handler:
+                    with patch('agent_factory.service.service_factory.A2AStarletteApplication') as mock_app_factory:
                         mock_a2a_app = Mock()
                         mock_app_factory.return_value.build.return_value = mock_a2a_app
                         
@@ -174,10 +176,10 @@ class TestAgentServiceFactory:
         # Set token streaming to enabled in A2A config
         a2a_agent_config.enable_token_streaming = True
         
-        with patch('agent_factory.service_factory.SemanticKernelAgentExecutor') as mock_executor:
-            with patch('agent_factory.service_factory.InMemoryTaskStore'):
-                with patch('agent_factory.service_factory.DefaultRequestHandler'):
-                    with patch('agent_factory.service_factory.A2AStarletteApplication') as mock_app_factory:
+        with patch('agent_factory.service.service_factory.SemanticKernelAgentExecutor') as mock_executor:
+            with patch('agent_factory.service.service_factory.InMemoryTaskStore'):
+                with patch('agent_factory.service.service_factory.DefaultRequestHandler'):
+                    with patch('agent_factory.service.service_factory.A2AStarletteApplication') as mock_app_factory:
                         mock_app_factory.return_value.build.return_value = Mock()
                         
                         service_factory = AgentServiceFactory(Mock(), Mock())
@@ -203,10 +205,10 @@ class TestAgentServiceFactory:
         # Set token streaming to disabled in A2A config
         a2a_agent_config.enable_token_streaming = False
         
-        with patch('agent_factory.service_factory.SemanticKernelAgentExecutor') as mock_executor:
-            with patch('agent_factory.service_factory.InMemoryTaskStore'):
-                with patch('agent_factory.service_factory.DefaultRequestHandler'):
-                    with patch('agent_factory.service_factory.A2AStarletteApplication') as mock_app_factory:
+        with patch('agent_factory.service.service_factory.SemanticKernelAgentExecutor') as mock_executor:
+            with patch('agent_factory.service.service_factory.InMemoryTaskStore'):
+                with patch('agent_factory.service.service_factory.DefaultRequestHandler'):
+                    with patch('agent_factory.service.service_factory.A2AStarletteApplication') as mock_app_factory:
                         mock_app_factory.return_value.build.return_value = Mock()
                         
                         service_factory = AgentServiceFactory(Mock(), Mock())
@@ -232,10 +234,10 @@ class TestAgentServiceFactory:
         # Default value should be False for enable_token_streaming
         assert a2a_agent_config.enable_token_streaming == False
         
-        with patch('agent_factory.service_factory.SemanticKernelAgentExecutor') as mock_executor:
-            with patch('agent_factory.service_factory.InMemoryTaskStore'):
-                with patch('agent_factory.service_factory.DefaultRequestHandler'):
-                    with patch('agent_factory.service_factory.A2AStarletteApplication') as mock_app_factory:
+        with patch('agent_factory.service.service_factory.SemanticKernelAgentExecutor') as mock_executor:
+            with patch('agent_factory.service.service_factory.InMemoryTaskStore'):
+                with patch('agent_factory.service.service_factory.DefaultRequestHandler'):
+                    with patch('agent_factory.service.service_factory.A2AStarletteApplication') as mock_app_factory:
                         mock_app_factory.return_value.build.return_value = Mock()
                         
                         service_factory = AgentServiceFactory(Mock(), Mock())

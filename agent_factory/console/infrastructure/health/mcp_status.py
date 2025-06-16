@@ -29,15 +29,15 @@ class MCPHealthChecker:
         self.configs = configs
 
     async def check_server_health(self, name: str, config: MCPServerConfig) -> bool:
-        server_type = config.type or ("sse" if config.url else "stdio")
-        if server_type == "sse":
+        server_type = config.type or ("streamable_http" if config.url else "stdio")
+        if server_type == "streamable_http":
             if config.url is None:
                 return False
-            return await self._check_sse_health(config.url)
+            return await self._check_streamable_http_health(config.url)
         else:
             return await self._check_stdio_health(config)
 
-    async def _check_sse_health(self, url: str) -> bool:
+    async def _check_streamable_http_health(self, url: str) -> bool:
         try:
             from urllib.parse import urlparse
 

@@ -5,21 +5,20 @@ import time
 from contextlib import AsyncExitStack
 from typing import Any, Dict, List, Optional, Type
 
-from opentelemetry import trace
 from pydantic import BaseModel, Field, create_model
 from semantic_kernel import Kernel
 from semantic_kernel.agents import ChatCompletionAgent
 from semantic_kernel.connectors.ai.function_choice_behavior import FunctionChoiceBehavior
 from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
+from semantic_kernel.filters.filter_types import FilterTypes
 from semantic_kernel.functions import KernelArguments
 from typing_extensions import Literal
 
+from ..mcp_server.provider import MCPProvider
 from .config import AgentConfig, AgentFactoryConfig
-from .mcp_server.provider import MCPProvider
 from .registry import ServiceRegistry
 
 logger = logging.getLogger(__name__)
-tracer = trace.get_tracer(__name__)
 
 
 class AgentFactory:
@@ -66,8 +65,34 @@ class AgentFactory:
             return
 
         self._kernel = self._registry.build_kernel()
+
+        if (
+            self._config.mcp
+            and self._config.mcp.servers
+            and self._config.mcp.auth
+            and self._config.mcp.auth.on_behalf_of
+            and self._config.mcp.auth.on_behalf_of.azure_ad
+        ):
+            from ..mcp_server.auth.filters import create_on_behalf_of_auth_filter
+
+            obo_filter = create_on_behalf_of_auth_filter(
+                self._config.mcp.servers, self._config.mcp.auth.on_behalf_of.azure_ad
+            )
+            self._kernel.add_filter(FilterTypes.FUNCTION_INVOCATION, obo_filter)
+
         self._provider = await self._stack.enter_async_context(
-            MCPProvider(self._config.mcp_servers)
+            MCPProvider(
+                self._config.mcp.servers if self._config.mcp else {},
+                (
+                    self._config.mcp.auth.on_behalf_of.azure_ad
+                    if (
+                        self._config.mcp
+                        and self._config.mcp.auth
+                        and self._config.mcp.auth.on_behalf_of
+                    )
+                    else None
+                ),
+            )
         )
 
         for config in self._config.agents.values():
@@ -85,7 +110,6 @@ class AgentFactory:
         settings = self._create_execution_settings(config, service_id)
         plugins: Optional[List[Any]] = None
         if config.mcp_servers and self._provider is not None:
-            # Only include successfully connected plugins, skip failed ones
             plugins = []
             failed_plugins = []
 
@@ -96,7 +120,6 @@ class AgentFactory:
                 else:
                     failed_plugins.append(name)
 
-            # Log any failed plugins
             if failed_plugins:
                 logger.warning(
                     f"Agent '{config.name}': MCP servers {failed_plugins} are not connected and will be skipped. "
@@ -108,14 +131,13 @@ class AgentFactory:
                 plugins = None
 
         start_time = time.perf_counter()
-        with tracer.start_as_current_span("agent.create", attributes={"agent": config.name}):
-            agent = ChatCompletionAgent(
-                arguments=KernelArguments(settings),
-                name=config.name,
-                instructions=config.instructions,
-                kernel=self._kernel,
-                plugins=plugins,
-            )
+        agent = ChatCompletionAgent(
+            arguments=KernelArguments(settings),
+            name=config.name,
+            instructions=config.instructions,
+            kernel=self._kernel,
+            plugins=plugins,
+        )
 
         self._agents[config.name] = agent
         elapsed_ms = (time.perf_counter() - start_time) * 1000

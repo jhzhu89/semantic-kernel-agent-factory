@@ -5,7 +5,7 @@ import anyio
 import click
 from dotenv import load_dotenv
 
-from ..factory import AgentFactory
+from ..core.factory import AgentFactory
 from .infrastructure.config.history_config import AgentFactoryCliConfig
 from .infrastructure.logging.manager import LoggingConfig
 from .ui.console_app import AgentFactoryConsole

@@ -120,13 +120,13 @@ class AgentFactoryConsole(App):
         await self._handle_user_message(message.agent_name, message.content)
 
     def _create_mcp_statuses(self) -> Dict[str, MCPServerStatus]:
-        mcp_configs = self.config.agent_factory.mcp_servers
+        mcp_configs = self.config.agent_factory.mcp.servers if self.config.agent_factory.mcp else {}
         if not mcp_configs:
             return {}
         statuses = {}
         for name, config in mcp_configs.items():
             server_type = config.type or (
-                "sse" if hasattr(config, "url") and config.url else "stdio"
+                "streamable_http" if hasattr(config, "url") and config.url else "stdio"
             )
             statuses[name] = MCPServerStatus(
                 name=name,
@@ -182,7 +182,7 @@ class AgentFactoryConsole(App):
                 logging.getLogger(__name__).error(f"Health check error: {e}")
 
     async def _check_mcp_servers(self) -> None:
-        mcp_configs = self.config.agent_factory.mcp_servers
+        mcp_configs = self.config.agent_factory.mcp.servers if self.config.agent_factory.mcp else {}
         if not mcp_configs:
             return
 
@@ -192,7 +192,7 @@ class AgentFactoryConsole(App):
                     name, config
                 )
                 server_type = config.type or (
-                    "sse" if hasattr(config, "url") and config.url else "stdio"
+                    "streamable_http" if hasattr(config, "url") and config.url else "stdio"
                 )
                 new_status = MCPServerStatus(
                     name=name,
@@ -205,7 +205,7 @@ class AgentFactoryConsole(App):
                 self._agent_panel.update_mcp_server_status(name, new_status)
             except Exception as e:
                 server_type = config.type or (
-                    "sse" if hasattr(config, "url") and config.url else "stdio"
+                    "streamable_http" if hasattr(config, "url") and config.url else "stdio"
                 )
                 error_status = MCPServerStatus(
                     name=name,

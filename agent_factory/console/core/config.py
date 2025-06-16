@@ -29,5 +29,7 @@ class DependencyContainer:
         if self._health_checker is None:
             from ..infrastructure.health.mcp_status import MCPHealthChecker
 
-            self._health_checker = MCPHealthChecker(self.config.agent_factory.mcp_servers)
+            self._health_checker = MCPHealthChecker(
+                self.config.agent_factory.mcp.servers if self.config.agent_factory.mcp else {}
+            )
         return self._health_checker

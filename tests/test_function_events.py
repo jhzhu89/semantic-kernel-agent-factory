@@ -1,4 +1,4 @@
-from agent_factory.function_events import (
+from agent_factory.service.function_events import (
     FunctionCallEvent,
     FunctionResultEvent,
     FunctionEventType

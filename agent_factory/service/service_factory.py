@@ -10,9 +10,9 @@ from a2a.server.tasks.inmemory_task_store import InMemoryTaskStore
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
+from ..core.factory import AgentFactory
 from .config import A2AAgentConfig, A2AServiceConfig, AgentServiceFactoryConfig
 from .executor import SemanticKernelAgentExecutor
-from .factory import AgentFactory
 
 logger = logging.getLogger(__name__)
 

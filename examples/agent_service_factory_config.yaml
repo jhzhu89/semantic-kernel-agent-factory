@@ -212,14 +212,21 @@ agent_factory:
             additionalProperties: false
       mcp_servers: ["time"]
 
-  mcp_servers:
-    time:
-      type: "stdio"
-      command: "python"
-      args: ["-m", "mcp_server_time"]
-      env:
-        DEBUG: "true"
-      encoding: "utf-8"
+  mcp:
+    servers:
+      time:
+        type: "stdio"
+        command: "python"
+        args: ["-m", "mcp_server_time"]
+        env:
+          DEBUG: "true"
+        encoding: "utf-8"
+    auth:
+      on_behalf_of:
+        azure_ad:
+          client_id: "your-client-id"
+          tenant_id: "your-tenant-id"
+          certificate_name: "your-cert-name"
 
   openai_models:
     gpt-4.1:

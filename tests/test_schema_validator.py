@@ -1,5 +1,5 @@
 import pytest
-from agent_factory.utils import OpenAISchemaValidator, OpenAISchemaValidationError
+from agent_factory.core.utils import OpenAISchemaValidator, OpenAISchemaValidationError
 
 
 class TestOpenAISchemaValidator:

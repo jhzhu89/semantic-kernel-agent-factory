@@ -1,15 +1,15 @@
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
-from agent_factory.config import (
+from unittest.mock import Mock, patch
+from agent_factory import (
     AgentConfig, 
     AgentFactoryConfig, 
     AzureOpenAIConfig,
     ModelSettings,
     ResponseSchema,
-    ModelSelectStrategy
+    ModelSelectStrategy,
+    AgentFactory,
+    ServiceRegistry,
 )
-from agent_factory.factory import AgentFactory
-from agent_factory.registry import ServiceRegistry
 from semantic_kernel import Kernel
 
 
@@ -52,7 +52,7 @@ class TestAgentFactory:
 
     @pytest.mark.asyncio
     async def test_factory_context_manager(self, factory_config):
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(factory_config) as factory:
@@ -61,7 +61,7 @@ class TestAgentFactory:
 
     @pytest.mark.asyncio
     async def test_get_agent(self, factory_config):
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(factory_config) as factory:
@@ -78,7 +78,7 @@ class TestAgentFactory:
 
     @pytest.mark.asyncio
     async def test_get_agent_service_id(self, factory_config):
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(factory_config) as factory:
@@ -111,7 +111,7 @@ class TestAgentFactory:
             model_selection=ModelSelectStrategy.first
         )
         
-        with patch('agent_factory.factory.MCPProvider') as mock_provider:
+        with patch('agent_factory.mcp_server.MCPProvider') as mock_provider:
             mock_provider.return_value.__aenter__.return_value = Mock()
             
             async with AgentFactory(factory_config) as factory:

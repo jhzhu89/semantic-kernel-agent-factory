@@ -29,18 +29,18 @@ class TestMCPServerConfig:
         assert config.env == {"DEBUG": "true"}
         assert config.description == "Time server"
 
-    def test_mcp_server_config_sse(self):
+    def test_mcp_server_config_streamable(self):
         config = MCPServerConfig(
-            type="sse",
+            type="streamable_http",
             url="https://example.com/mcp",
             timeout=10,
-            description="SSE server"
+            description="HTTP server"
         )
         
-        assert config.type == "sse"
+        assert config.type == "streamable_http"
         assert config.url == "https://example.com/mcp"
         assert config.timeout == 10
-        assert config.description == "SSE server"
+        assert config.description == "HTTP server"
 
     def test_mcp_server_config_custom_timeout(self):
         config = MCPServerConfig(timeout=30)

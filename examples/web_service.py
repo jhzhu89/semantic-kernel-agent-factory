@@ -10,8 +10,8 @@ from pathlib import Path
 
 import uvicorn
 
-from agent_factory.config import AgentServiceFactoryConfig
-from agent_factory.service_factory import AgentServiceFactory
+from agent_factory.service import AgentServiceFactoryConfig
+from agent_factory.service import AgentServiceFactory
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 

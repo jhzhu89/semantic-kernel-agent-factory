@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
-from agent_factory.executor import SemanticKernelAgentExecutor
+from agent_factory.service import SemanticKernelAgentExecutor
 from semantic_kernel.agents import ChatCompletionAgent, ChatHistoryAgentThread
-from semantic_kernel.contents import ChatMessageContent, FunctionCallContent, FunctionResultContent
+from semantic_kernel.contents import FunctionCallContent, FunctionResultContent
 
 
 class TestSemanticKernelAgentExecutor:
@@ -68,7 +68,7 @@ class TestSemanticKernelAgentExecutor:
             service_id="gpt-4"
         )
         
-        with patch('agent_factory.executor.ChatHistorySummarizationReducer') as mock_reducer:
+        with patch('agent_factory.service.executor.ChatHistorySummarizationReducer') as mock_reducer:
             thread = await executor._create_thread("session-123")
             
             assert isinstance(thread, ChatHistoryAgentThread)
@@ -108,7 +108,7 @@ class TestSemanticKernelAgentExecutor:
         
         with patch.object(executor, '_get_thread', return_value=mock_thread):
             with patch.object(executor, '_process_message_level_streaming_response', new_callable=AsyncMock) as mock_process:
-                with patch('agent_factory.executor.new_task') as mock_new_task:
+                with patch('agent_factory.service.executor.new_task') as mock_new_task:
                     mock_task = Mock()
                     mock_task.id = "task-123"
                     mock_task.contextId = "context-123"  # Make sure this is a string
@@ -171,7 +171,7 @@ class TestSemanticKernelAgentExecutor:
             arguments={"arg1": "value1"}
         )
         
-        with patch('agent_factory.executor.new_data_artifact') as mock_artifact:
+        with patch('agent_factory.service.executor.new_data_artifact') as mock_artifact:
             mock_artifact.return_value = Mock()
             
             artifact = executor._create_function_event(function_call, mock_task, "call")
@@ -191,7 +191,7 @@ class TestSemanticKernelAgentExecutor:
             result="function result"
         )
         
-        with patch('agent_factory.executor.new_data_artifact') as mock_artifact:
+        with patch('agent_factory.service.executor.new_data_artifact') as mock_artifact:
             mock_artifact.return_value = Mock()
             
             artifact = executor._create_function_event(function_result, mock_task, "result")
