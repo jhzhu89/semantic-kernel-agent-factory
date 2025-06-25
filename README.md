@@ -50,8 +50,15 @@ For local development:
 git clone https://github.com/jhzhu89/semantic-kernel-agent-factory
 cd semantic-kernel-agent-factory
 
-# Install in editable mode with development dependencies
+# Install in editable mode with development dependencies only
 pip install -e ".[dev]"
+
+# OR install with all features for comprehensive development/testing
+pip install -e ".[dev-all]"
+
+# Use the Makefile for quick setup
+make install-dev        # Basic development setup
+make install-dev-all    # Development setup with all features
 ```
 
 ## Quick Start

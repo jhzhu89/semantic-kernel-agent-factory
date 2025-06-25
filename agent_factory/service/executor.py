@@ -108,10 +108,10 @@ class SemanticKernelAgentExecutor(AgentExecutor):
 
         return new_data_artifact(name="function_event", description=message, data=event.to_dict())
 
-    def _send_status_update(
+    async def _send_status_update(
         self, event_queue: EventQueue, task, state: TaskState, message: str, final: bool = False
     ):
-        event_queue.enqueue_event(
+        await event_queue.enqueue_event(
             TaskStatusUpdateEvent(
                 status=TaskStatus(
                     state=state, message=new_agent_text_message(message, task.contextId, task.id)
@@ -122,7 +122,7 @@ class SemanticKernelAgentExecutor(AgentExecutor):
             )
         )
 
-    def _enqueue_artifact(
+    async def _enqueue_artifact(
         self,
         event_queue: EventQueue,
         task,
@@ -130,7 +130,7 @@ class SemanticKernelAgentExecutor(AgentExecutor):
         append: bool = False,
         last_chunk: bool = False,
     ):
-        event_queue.enqueue_event(
+        await event_queue.enqueue_event(
             TaskArtifactUpdateEvent(
                 append=append,
                 artifact=artifact,
@@ -147,13 +147,13 @@ class SemanticKernelAgentExecutor(AgentExecutor):
             for item in message.items:
                 if isinstance(item, FunctionCallContent):
                     artifact = self._create_function_event(item, task, "call")
-                    self._enqueue_artifact(event_queue, task, artifact)
-                    self._send_status_update(
+                    await self._enqueue_artifact(event_queue, task, artifact)
+                    await self._send_status_update(
                         event_queue, task, TaskState.working, f"Calling: {item.name}"
                     )
                 elif isinstance(item, FunctionResultContent):
                     artifact = self._create_function_event(item, task, "result")
-                    self._enqueue_artifact(event_queue, task, artifact)
+                    await self._enqueue_artifact(event_queue, task, artifact)
 
         return handle_intermediate
 
@@ -183,7 +183,7 @@ class SemanticKernelAgentExecutor(AgentExecutor):
 
                 artifact = new_text_artifact(name="streamed_text", text=content)
                 artifact.artifactId = artifact_id
-                self._enqueue_artifact(event_queue, task, artifact, append=not is_first_chunk)
+                await self._enqueue_artifact(event_queue, task, artifact, append=not is_first_chunk)
 
                 is_first_chunk = False
                 has_sent_any_chunk = True
@@ -191,7 +191,7 @@ class SemanticKernelAgentExecutor(AgentExecutor):
         if has_sent_any_chunk and task.id not in self._cancelled_tasks:
             artifact = new_text_artifact(name="streamed_text", text="")
             artifact.artifactId = artifact_id
-            self._enqueue_artifact(event_queue, task, artifact, append=True, last_chunk=True)
+            await self._enqueue_artifact(event_queue, task, artifact, append=True, last_chunk=True)
 
         self._log_thread_messages(thread)
 
@@ -218,13 +218,13 @@ class SemanticKernelAgentExecutor(AgentExecutor):
                 logger.debug(f"Message-level streaming: {content}")
 
                 artifact = new_text_artifact(name="streamed_text", text=content)
-                self._enqueue_artifact(event_queue, task, artifact)
+                await self._enqueue_artifact(event_queue, task, artifact)
 
                 has_sent_any_message = True
 
         if has_sent_any_message and task.id not in self._cancelled_tasks:
             artifact = new_text_artifact(name="streamed_text", text="")
-            self._enqueue_artifact(event_queue, task, artifact, last_chunk=True)
+            await self._enqueue_artifact(event_queue, task, artifact, last_chunk=True)
 
         self._log_thread_messages(thread)
 
@@ -271,16 +271,16 @@ class SemanticKernelAgentExecutor(AgentExecutor):
             task = new_task(context.message)
 
         if not context.current_task:
-            event_queue.enqueue_event(task)
+            await event_queue.enqueue_event(task)
 
         if task.id in self._cancelled_tasks:
-            self._send_status_update(
+            await self._send_status_update(
                 event_queue, task, TaskState.canceled, "Task was cancelled", final=True
             )
             return
 
         logger.info(f"Agent '{self.name}' executing task {task.id} in session {task.id}")
-        self._send_status_update(event_queue, task, TaskState.working, "Processing...")
+        await self._send_status_update(event_queue, task, TaskState.working, "Processing...")
 
         try:
             thread = await self._get_thread(task.id)
@@ -292,11 +292,11 @@ class SemanticKernelAgentExecutor(AgentExecutor):
                 )
 
             if task.id in self._cancelled_tasks:
-                self._send_status_update(
+                await self._send_status_update(
                     event_queue, task, TaskState.canceled, "Task was cancelled", final=True
                 )
             else:
-                self._send_status_update(
+                await self._send_status_update(
                     event_queue, task, TaskState.completed, "Task completed", final=True
                 )
 
@@ -304,7 +304,7 @@ class SemanticKernelAgentExecutor(AgentExecutor):
 
         except Exception as e:
             logger.error(f"Error executing task {task.id}: {e}")
-            self._send_status_update(
+            await self._send_status_update(
                 event_queue, task, TaskState.failed, f"Error: {str(e)}", final=True
             )
 

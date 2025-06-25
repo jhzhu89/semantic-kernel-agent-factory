@@ -10,9 +10,12 @@ install:  ## Install package in production mode
 	pip install .
 
 install-dev:  ## Install package and development dependencies
-	pip install -e .
-	pip install -r dev-requirements.txt
-	pre-commit install
+	pip install -e ".[dev]"
+	pre-commit install || echo "pre-commit install failed, continuing..."
+
+install-dev-all:  ## Install package with all features and development dependencies
+	pip install -e ".[dev-all]"
+	pre-commit install || echo "pre-commit install failed, continuing..."
 
 test:  ## Run tests
 	pytest
@@ -28,7 +31,7 @@ format:  ## Format code (black + isort)
 	isort agent_factory
 
 type-check:  ## Run type checking (mypy)
-	mypy agent_factory
+	mypy --config-file pyproject.toml agent_factory
 
 build:  ## Build package
 	python -m build

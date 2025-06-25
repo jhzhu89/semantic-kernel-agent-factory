@@ -24,13 +24,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e ".[dev]"
+        pip install -e ".[dev-all]"
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 ./agent_factory --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 ./agent_factory --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Run type checks with mypy
       run: |
         make type-check
@@ -39,6 +39,7 @@ jobs:
         make format
     - name: Test with pytest
       run: |
+        pip install mcp-server-time
         make test-cov
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3

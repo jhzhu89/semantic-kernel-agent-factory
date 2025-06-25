@@ -26,12 +26,14 @@ try:
 
 except ImportError as e:
     _SERVICE_AVAILABLE = False
+    _import_error = e
 
     def _raise_service_import_error(*args, **kwargs):
         raise ImportError(
             "Service functionality requires additional dependencies. "
-            "Install with: pip install 'semantic-kernel-agent-factory[service]'"
-        ) from e
+            "Install with: pip install "
+            "'semantic-kernel-agent-factory[service]'"
+        ) from _import_error
 
     # Create dummy classes that raise helpful errors
     class _ServiceImportError:
@@ -42,7 +44,7 @@ except ImportError as e:
     A2AAgentConfig = _ServiceImportError  # type: ignore[misc,assignment]
     A2AServiceConfig = _ServiceImportError  # type: ignore[misc,assignment]
     ConfigurableAgentCard = _ServiceImportError  # type: ignore[misc,assignment]
-    SemanticKernelAgentExecutor = _ServiceImportError  # type: ignore[misc,assignment]
+    SemanticKernelAgentExecutor = _ServiceImportError  # type: ignore[misc,assignment]  # noqa: E501
 
     def is_a2a_available():
         return False

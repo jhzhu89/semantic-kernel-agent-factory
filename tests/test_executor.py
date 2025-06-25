@@ -102,7 +102,7 @@ class TestSemanticKernelAgentExecutor:
         mock_context.message = "Test message"
         mock_context.get_user_input.return_value = "Test message"
         
-        mock_event_queue = Mock()
+        mock_event_queue = AsyncMock()
         
         mock_thread = AsyncMock(spec=ChatHistoryAgentThread)
         

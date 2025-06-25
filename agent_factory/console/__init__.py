@@ -11,12 +11,14 @@ try:
 
 except ImportError as e:
     _CONSOLE_AVAILABLE = False
+    _import_error = e
 
     def _raise_console_import_error(*args, **kwargs):
         raise ImportError(
             "Console functionality requires additional dependencies. "
-            "Install with: pip install 'semantic-kernel-agent-factory[console]'"
-        ) from e
+            "Install with: pip install "
+            "'semantic-kernel-agent-factory[console]'"
+        ) from _import_error
 
     # Create dummy function that raises helpful error
     console = _raise_console_import_error  # type: ignore[assignment]

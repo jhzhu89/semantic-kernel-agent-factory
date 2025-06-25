@@ -63,13 +63,24 @@ dev = [
     "black>=25.1.0",
     "isort>=5.12.0",
     "ruff>=0.1.0",
+    "flake8>=7.2.0",
     
     # Type checking
     "mypy>=1.16.0",
     "types-PyYAML>=6.0.12.20250516",
     "types-click>=7.1.0",
+    
+    # Development tools
+    "pre-commit>=3.0.0",
+    "build>=1.0.0",
+    "twine>=4.0.0",
+]
 
-    "flake8>=7.2.0",
+# Development with all optional features (for CI/CD)
+dev-all = [
+    "semantic-kernel-agent-factory[dev]",
+    "semantic-kernel-agent-factory[console]",
+    "semantic-kernel-agent-factory[service]",
 ]
 
 # All optional features
@@ -106,8 +117,8 @@ exclude = ["tests*", "examples*", "scripts*"]
 
 [tool.setuptools_scm]
 write_to = "agent_factory/_version.py"
-version_scheme = "post-release"
-local_scheme = "node-and-date"
+version_scheme = "only-version"
+local_scheme = "no-local-version"
 
 [tool.black]
 line-length = 100
