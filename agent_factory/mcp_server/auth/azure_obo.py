@@ -1,12 +1,22 @@
 import logging
 import warnings
+from abc import ABC, abstractmethod
 from contextvars import ContextVar
 from typing import NamedTuple, Optional
 
-from .base import AuthHandler
+import httpx
+
 from .credential_cache import CredentialCache
 
 logger = logging.getLogger(__name__)
+
+
+class AuthHandler(httpx.Auth, ABC):
+    requires_request_body = False
+
+    @abstractmethod
+    async def get_token(self) -> str:
+        pass
 
 
 class AuthContext(NamedTuple):

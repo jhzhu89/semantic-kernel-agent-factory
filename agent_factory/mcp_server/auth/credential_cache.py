@@ -1,16 +1,20 @@
 import asyncio
+import base64
 import hashlib
 import logging
+import time
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Dict
 
 import jwt
-from aiocache import Cache
+from aiocache import SimpleMemoryCache
 from azure.identity.aio import OnBehalfOfCredential
-
-from .base import CertificateManager
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.serialization import Encoding, load_pem_private_key
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +68,7 @@ class CredentialCache(ABC):
 
     def __init__(self, auth_type: str):
         self._auth_type = auth_type
-        self._cache: Cache = Cache(Cache.MEMORY)
+        self._cache: SimpleMemoryCache = SimpleMemoryCache()
         self._creation_locks: Dict[str, asyncio.Lock] = {}
         self._creation_locks_lock = asyncio.Lock()
         self._token_parser = TokenParser()
@@ -80,13 +84,17 @@ class CredentialCache(ABC):
         )
 
         cached_credential = await self._cache.get(cache_key)
+        logger.debug(f"Initial cache check: key={cache_key}, found={cached_credential is not None}")
+
         if cached_credential is not None and isinstance(cached_credential, CachedCredential):
             if cached_credential.is_valid():
                 logger.debug(f"Cache hit for key: {cache_key}")
                 credential: OnBehalfOfCredential = cached_credential.credential
                 return credential
             else:
-                logger.debug(f"Cached credential expired, creating new one")
+                logger.debug(
+                    f"Cached credential expired: key={cache_key}, expiry={cached_credential.token_info.expiry}, now={datetime.utcnow()}"
+                )
 
         return await self._create_and_cache(cache_key, token_info, user_assertion)
 
@@ -102,16 +110,25 @@ class CredentialCache(ABC):
         creation_lock = await self._get_creation_lock(cache_key)
 
         async with creation_lock:
-            # Double-check cache to avoid race conditions
             cached_credential = await self._cache.get(cache_key)
+            logger.debug(
+                f"Double-check cache: key={cache_key}, found={cached_credential is not None}"
+            )
+
             if (
                 cached_credential is not None
                 and isinstance(cached_credential, CachedCredential)
                 and cached_credential.is_valid()
             ):
+                logger.debug(f"Double-check cache hit: key={cache_key}")
                 credential: OnBehalfOfCredential = cached_credential.credential
                 return credential
+            elif cached_credential is not None:
+                logger.debug(
+                    f"Double-check found invalid credential: key={cache_key}, valid={cached_credential.is_valid()}"
+                )
 
+            logger.debug(f"Creating new credential for key: {cache_key}")
             try:
                 credential = await self._create_credential(
                     token_info.tenant_id, token_info.client_id, user_assertion
@@ -122,6 +139,11 @@ class CredentialCache(ABC):
 
                 cached_credential = CachedCredential(credential=credential, token_info=token_info)
                 ttl = int(token_info.expiry.timestamp())
+                current_time = int(datetime.utcnow().timestamp())
+                logger.debug(
+                    f"Setting cache: key={cache_key}, ttl={ttl}, current_time={current_time}, ttl_seconds={ttl - current_time}"
+                )
+
                 await self._cache.set(cache_key, cached_credential, ttl=ttl)
 
                 logger.debug(f"Credential created and cached for key: {cache_key}")
@@ -155,25 +177,53 @@ class CredentialCache(ABC):
 
 class CertificateCredentialCache(CredentialCache):
 
-    def __init__(self, cert_manager: CertificateManager, cert_name: str):
+    def __init__(self, cert_pem: str):
         super().__init__("certificate")
-        self._cert_manager = cert_manager
-        self._cert_name = cert_name
+        self._cert_pem = cert_pem
+
+    def _parse_pem(self, cert_pem: str):
+        pem_bytes = cert_pem.encode("utf-8")
+        private_key = load_pem_private_key(pem_bytes, password=None)
+        certificate = x509.load_pem_x509_certificate(pem_bytes)
+        return private_key, certificate
+
+    def _build_assertion_func(self, cert_pem: str, tenant_id: str, client_id: str):
+        private_key, certificate = self._parse_pem(cert_pem)
+
+        cert_der = certificate.public_bytes(Encoding.DER)
+        x5c_chain = [base64.b64encode(cert_der).decode()]
+
+        sha1_digest = hashes.Hash(hashes.SHA1())
+        sha1_digest.update(cert_der)
+        sha1_thumbprint = base64.urlsafe_b64encode(sha1_digest.finalize()).decode().rstrip("=")
+
+        def build_assertion() -> str:
+            now = int(time.time())
+            payload = {
+                "aud": f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
+                "iss": client_id,
+                "sub": client_id,
+                "jti": str(uuid.uuid4()),
+                "iat": now,
+                "exp": now + 600,
+            }
+            headers = {"alg": "RS256", "x5c": x5c_chain, "x5t": sha1_thumbprint}
+            return jwt.encode(payload, private_key, algorithm="RS256", headers=headers)
+
+        return build_assertion
 
     async def _create_credential(
         self, tenant_id: str, client_id: str, user_assertion: str
     ) -> OnBehalfOfCredential:
         try:
-            cert_data = await self._cert_manager.get_certificate(self._cert_name)
+            assertion_func = self._build_assertion_func(self._cert_pem, tenant_id, client_id)
         except Exception as e:
-            raise RuntimeError(
-                f"Certificate retrieval failed for certificate: {self._cert_name}"
-            ) from e
+            raise RuntimeError("Certificate processing failed") from e
 
         return OnBehalfOfCredential(
             tenant_id=tenant_id,
             client_id=client_id,
-            client_certificate=cert_data,
+            client_assertion_func=assertion_func,
             user_assertion=user_assertion,
         )
 

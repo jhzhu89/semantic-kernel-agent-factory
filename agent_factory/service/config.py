@@ -16,14 +16,14 @@ class ConfigurableAgentCard(BaseModel):
     url: str = Field(default="http://localhost:8000")
     version: str = Field(default="1.0.0")
     capabilities: Optional[AgentCapabilities] = None
-    defaultInputModes: List[str] = Field(default_factory=lambda: ["text/plain"])
-    defaultOutputModes: List[str] = Field(default_factory=lambda: ["text/plain"])
+    default_input_modes: List[str] = Field(default_factory=lambda: ["text/plain"])
+    default_output_modes: List[str] = Field(default_factory=lambda: ["text/plain"])
     skills: List[AgentSkill] = Field(default_factory=list)
     provider: Optional[AgentProvider] = None
-    documentationUrl: Optional[str] = None
-    securitySchemes: Optional[Dict[str, SecurityScheme]] = None
+    documentation_url: Optional[str] = None
+    security_schemes: Optional[Dict[str, SecurityScheme]] = None
     security: Optional[List[Dict[str, List[str]]]] = None
-    supportsAuthenticatedExtendedCard: Optional[bool] = None
+    supports_authenticated_extended_card: Optional[bool] = None
 
     def to_agent_card(self) -> "AgentCard":
         from a2a.types import AgentCapabilities, AgentCard
@@ -31,7 +31,7 @@ class ConfigurableAgentCard(BaseModel):
         capabilities = self.capabilities
         if capabilities is None:
             capabilities = AgentCapabilities(
-                pushNotifications=False, stateTransitionHistory=False, streaming=True
+                push_notifications=False, state_transition_history=False, streaming=True
             )
 
         return AgentCard(
@@ -40,14 +40,14 @@ class ConfigurableAgentCard(BaseModel):
             url=self.url,
             version=self.version,
             capabilities=capabilities,
-            defaultInputModes=self.defaultInputModes,
-            defaultOutputModes=self.defaultOutputModes,
+            default_input_modes=self.default_input_modes,
+            default_output_modes=self.default_output_modes,
             skills=self.skills,
             provider=self.provider,
-            documentationUrl=self.documentationUrl,
-            securitySchemes=self.securitySchemes,
+            documentation_url=self.documentation_url,
+            security_schemes=self.security_schemes,
             security=self.security,
-            supportsAuthenticatedExtendedCard=self.supportsAuthenticatedExtendedCard,
+            supports_authenticated_extended_card=self.supports_authenticated_extended_card,
         )
 
 

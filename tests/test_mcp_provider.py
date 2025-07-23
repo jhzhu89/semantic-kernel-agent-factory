@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
 from agent_factory.mcp_server.provider import MCPProvider
-from agent_factory.mcp_server.config import MCPServerConfig
+from agent_factory.mcp_server.config import MCPServerConfig, AzureAdConfig, AuthConfig
 
 
 class TestMCPProvider:
@@ -166,3 +166,67 @@ class TestMCPProvider:
         # Test that _create_plugin raises ValueError for missing command
         with pytest.raises(ValueError, match="Command is required for stdio MCP server"):
             provider._create_plugin("invalid", invalid_config["invalid"])
+
+    def test_validate_auth_config_no_azure_config(self):
+        config = MCPServerConfig(
+            auth=AuthConfig(enabled=True, scope="test-scope")
+        )
+        provider = MCPProvider({})
+        
+        with pytest.raises(ValueError, match="Azure auth config required"):
+            provider._validate_auth_config("test", config)
+
+    def test_validate_auth_config_no_scope(self):
+        azure_config = AzureAdConfig(client_secret="secret")
+        config = MCPServerConfig(
+            auth=AuthConfig(enabled=True, scope="")
+        )
+        provider = MCPProvider({}, azure_config)
+        
+        with pytest.raises(ValueError, match="Auth scope required"):
+            provider._validate_auth_config("test", config)
+
+    def test_validate_auth_config_no_credentials(self):
+        azure_config = AzureAdConfig()
+        config = MCPServerConfig(
+            auth=AuthConfig(enabled=True, scope="test-scope")
+        )
+        provider = MCPProvider({}, azure_config)
+        
+        with pytest.raises(ValueError, match="Either certificate PEM or client secret required"):
+            provider._validate_auth_config("test", config)
+
+    def test_validate_auth_config_with_certificate_pem_only(self):
+        azure_config = AzureAdConfig(certificate_pem="-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+        config = MCPServerConfig(
+            auth=AuthConfig(enabled=True, scope="test-scope")
+        )
+        provider = MCPProvider({}, azure_config)
+        
+        provider._validate_auth_config("test", config)
+
+    def test_validate_auth_config_with_certificate_pem(self):
+        azure_config = AzureAdConfig(certificate_pem="-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+        config = MCPServerConfig(
+            auth=AuthConfig(enabled=True, scope="test-scope")
+        )
+        provider = MCPProvider({}, azure_config)
+        
+        provider._validate_auth_config("test", config)
+
+    def test_validate_auth_config_with_client_secret(self):
+        azure_config = AzureAdConfig(client_secret="secret")
+        config = MCPServerConfig(
+            auth=AuthConfig(enabled=True, scope="test-scope")
+        )
+        provider = MCPProvider({}, azure_config)
+        
+        provider._validate_auth_config("test", config)
+
+    def test_validate_auth_config_disabled_auth(self):
+        config = MCPServerConfig(
+            auth=AuthConfig(enabled=False, scope="test-scope")
+        )
+        provider = MCPProvider({})
+        
+        provider._validate_auth_config("test", config)

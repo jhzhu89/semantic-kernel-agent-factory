@@ -10,10 +10,8 @@ class AuthConfig(BaseModel):
 
 
 class AzureAdConfig(BaseModel):
-    certificate_name: Optional[str] = None
+    certificate_pem: Optional[str] = None
     client_secret: Optional[str] = None
-    client_id: Optional[str] = None
-    tenant_id: Optional[str] = None
 
 
 class OnBehalfOfAuth(BaseModel):

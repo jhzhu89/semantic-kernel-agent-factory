@@ -116,8 +116,8 @@ class SemanticKernelAgentExecutor(AgentExecutor):
                 status=TaskStatus(
                     state=state, message=new_agent_text_message(message, task.contextId, task.id)
                 ),
-                contextId=task.contextId,
-                taskId=task.id,
+                context_id=task.contextId,
+                task_id=task.id,
                 final=final,
             )
         )
@@ -134,9 +134,9 @@ class SemanticKernelAgentExecutor(AgentExecutor):
             TaskArtifactUpdateEvent(
                 append=append,
                 artifact=artifact,
-                contextId=task.contextId,
-                taskId=task.id,
-                lastChunk=last_chunk,
+                context_id=task.contextId,
+                task_id=task.id,
+                last_chunk=last_chunk,
             )
         )
 

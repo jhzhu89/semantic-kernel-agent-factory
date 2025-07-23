@@ -138,11 +138,11 @@ class MCPProvider:
             if not config.auth.scope:
                 raise ValueError(f"Auth scope required for MCP '{name}'")
             if (
-                not self._azure_ad_config.certificate_name
+                not self._azure_ad_config.certificate_pem
                 and not self._azure_ad_config.client_secret
             ):
                 raise ValueError(
-                    f"Either certificate name or client secret required for MCP '{name}'"
+                    f"Either certificate PEM or client secret required for MCP '{name}'"
                 )
 
     def _create_plugin(self, name: str, config: MCPServerConfig):

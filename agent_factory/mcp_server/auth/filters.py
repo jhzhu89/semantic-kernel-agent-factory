@@ -5,7 +5,6 @@ from semantic_kernel.functions.kernel_parameter_metadata import KernelParameterM
 
 from ..config import AzureAdConfig, MCPServerConfig
 from .azure_obo import CURRENT_AUTH_CONTEXT
-from .certificate_managers import FileCertificateManager
 from .credential_cache import CertificateCredentialCache, CredentialCache, SecretCredentialCache
 
 
@@ -15,13 +14,14 @@ def create_on_behalf_of_auth_filter(
     cert_directory: str = ".",
 ) -> Callable:
     def _create_credential_cache() -> CredentialCache:
-        if azure_ad_config.certificate_name:
-            cert_manager = FileCertificateManager(cert_directory)
-            return CertificateCredentialCache(cert_manager, azure_ad_config.certificate_name)
+        if azure_ad_config.client_secret:
+            return SecretCredentialCache(azure_ad_config.client_secret)
+        elif azure_ad_config.certificate_pem:
+            return CertificateCredentialCache(azure_ad_config.certificate_pem)
+        else:
+            raise ValueError("No valid authentication configuration provided")
 
-        if not azure_ad_config.client_secret:
-            raise ValueError("Either certificate_name or client_secret must be provided")
-        return SecretCredentialCache(azure_ad_config.client_secret)
+    credential_cache = _create_credential_cache()
 
     def _is_streamable_http_with_auth(config: MCPServerConfig) -> bool:
         return (
@@ -32,7 +32,6 @@ def create_on_behalf_of_auth_filter(
 
     async def _get_obo_token(config: MCPServerConfig, user_token: str) -> Optional[str]:
         try:
-            credential_cache = _create_credential_cache()
             credential = await credential_cache.get_credential(user_token)
             if not credential or not config.auth:
                 return None
