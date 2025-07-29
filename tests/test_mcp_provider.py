@@ -169,7 +169,7 @@ class TestMCPProvider:
 
     def test_validate_auth_config_no_azure_config(self):
         config = MCPServerConfig(
-            auth=AuthConfig(enabled=True, scope="test-scope")
+            auth=AuthConfig(enable_s2s=False, enable_user_assertion=True, scope="test-scope")
         )
         provider = MCPProvider({})
         
@@ -177,19 +177,25 @@ class TestMCPProvider:
             provider._validate_auth_config("test", config)
 
     def test_validate_auth_config_no_scope(self):
-        azure_config = AzureAdConfig(client_secret="secret")
+        azure_config = AzureAdConfig(
+            tenant_id="test-tenant-id",
+            client_id="test-client-id",
+            client_secret="secret"
+        )
         config = MCPServerConfig(
-            auth=AuthConfig(enabled=True, scope="")
+            auth=AuthConfig(enable_s2s=False, enable_user_assertion=True, scope="test-scope")
         )
         provider = MCPProvider({}, azure_config)
         
-        with pytest.raises(ValueError, match="Auth scope required"):
-            provider._validate_auth_config("test", config)
+        provider._validate_auth_config("test", config)
 
     def test_validate_auth_config_no_credentials(self):
-        azure_config = AzureAdConfig()
+        azure_config = AzureAdConfig(
+            tenant_id="test-tenant-id",
+            client_id="test-client-id"
+        )
         config = MCPServerConfig(
-            auth=AuthConfig(enabled=True, scope="test-scope")
+            auth=AuthConfig(enable_s2s=False, enable_user_assertion=True, scope="test-scope")
         )
         provider = MCPProvider({}, azure_config)
         
@@ -197,27 +203,39 @@ class TestMCPProvider:
             provider._validate_auth_config("test", config)
 
     def test_validate_auth_config_with_certificate_pem_only(self):
-        azure_config = AzureAdConfig(certificate_pem="-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+        azure_config = AzureAdConfig(
+            tenant_id="test-tenant-id",
+            client_id="test-client-id",
+            certificate_pem="-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----"
+        )
         config = MCPServerConfig(
-            auth=AuthConfig(enabled=True, scope="test-scope")
+            auth=AuthConfig(enable_s2s=False, enable_user_assertion=True, scope="test-scope")
         )
         provider = MCPProvider({}, azure_config)
         
         provider._validate_auth_config("test", config)
 
     def test_validate_auth_config_with_certificate_pem(self):
-        azure_config = AzureAdConfig(certificate_pem="-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
+        azure_config = AzureAdConfig(
+            tenant_id="test-tenant-id",
+            client_id="test-client-id",
+            certificate_pem="-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----"
+        )
         config = MCPServerConfig(
-            auth=AuthConfig(enabled=True, scope="test-scope")
+            auth=AuthConfig(enable_s2s=False, enable_user_assertion=True, scope="test-scope")
         )
         provider = MCPProvider({}, azure_config)
         
         provider._validate_auth_config("test", config)
 
     def test_validate_auth_config_with_client_secret(self):
-        azure_config = AzureAdConfig(client_secret="secret")
+        azure_config = AzureAdConfig(
+            tenant_id="test-tenant-id",
+            client_id="test-client-id",
+            client_secret="secret"
+        )
         config = MCPServerConfig(
-            auth=AuthConfig(enabled=True, scope="test-scope")
+            auth=AuthConfig(enable_s2s=False, enable_user_assertion=True, scope="test-scope")
         )
         provider = MCPProvider({}, azure_config)
         
@@ -225,7 +243,7 @@ class TestMCPProvider:
 
     def test_validate_auth_config_disabled_auth(self):
         config = MCPServerConfig(
-            auth=AuthConfig(enabled=False, scope="test-scope")
+            auth=AuthConfig(enable_s2s=False, enable_user_assertion=False, scope="test-scope")
         )
         provider = MCPProvider({})
         

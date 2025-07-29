@@ -187,6 +187,13 @@ agent_factory:
       mcp_servers: ["time", "kubernetes"]
   
   mcp:
+    # Azure AD configuration for authenticated MCP servers
+    auth:
+      azure_ad:
+        tenant_id: "${AZURE_TENANT_ID}"
+        client_id: "${AZURE_CLIENT_ID}"
+        client_secret: "${AZURE_CLIENT_SECRET}"
+    
     servers:
       time:
         type: "stdio"
@@ -197,21 +204,67 @@ agent_factory:
         type: "streamable_http"
         url: "https://k8s-mcp-server.example.com/mcp"
         timeout: 10
+        auth:
+          enable_s2s: true
+          enable_user_assertion: true
+          scope: "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d/user.read"
 ```
 
-### Access Token Authentication
+### MCP Server Authentication
 
-For HTTP-based MCP servers that require authentication, there's a limitation with the MCP Python client SDK. While it's easy to obtain user access tokens in HTTP services, the underlying HTTP client utilization doesn't provide a straightforward way to add tokens to HTTP headers when communicating with MCP servers.
+The system supports two authentication mechanisms for HTTP-based MCP servers that require Azure AD authentication:
 
-**Workaround: Filter-based Token Injection**
+#### Service-to-Service (S2S) Authentication
+Uses application credentials (client secret or certificate) for server-to-server communication. The system automatically adds Bearer tokens to HTTP headers when communicating with MCP servers.
 
-As a workaround, the system uses filters to inject access tokens before sending requests to MCP servers. Check out filters.py for details.
+```yaml
+mcp:
+  auth:
+    azure_ad:
+      tenant_id: "${AZURE_TENANT_ID}"
+      client_id: "${AZURE_CLIENT_ID}"
+      client_secret: "${AZURE_CLIENT_SECRET}"
+      # OR use certificate instead of client_secret:
+      # certificate_pem: "${AZURE_CERTIFICATE_PEM}"
+  
+  servers:
+    user_service:
+      type: "streamable_http"
+      url: "https://user-api.example.com/mcp"
+      auth:
+        enable_s2s: true
+        enable_user_assertion: false
+        scope: "b2c3d4e5-6f7a-8b9c-0d1e-2f3a4b5c6d7e/.default"
+```
+
+#### On-Behalf-Of (OBO) Authentication
+Uses user assertion tokens to perform operations on behalf of the authenticated user. The system uses Semantic Kernel filters to inject user tokens as function parameters.
+
+```yaml
+mcp:
+  auth:
+    azure_ad:
+      tenant_id: "${AZURE_TENANT_ID}"
+      client_id: "${AZURE_CLIENT_ID}"
+      client_secret: "${AZURE_CLIENT_SECRET}"
+  
+  servers:
+    kubernetes:
+      type: "streamable_http"
+      url: "https://k8s-mcp-server.example.com/mcp"
+      auth:
+        enable_s2s: true
+        enable_user_assertion: true
+        scope: "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d/user.read"
+
+```
 
 **Important Notes:**
-- The server should consume the `access_token` for authentication purposes
-- **Do not** include `access_token` in the tool's input schema definition
-- The token is automatically injected by the filter before the request reaches the MCP server
-- This is a temporary workaround until the MCP Python client SDK provides better header customization support
+- For S2S authentication: MCP servers receive Bearer tokens in the `Authorization` header
+- For OBO authentication: MCP servers receive user tokens via the `user_assertion` parameter
+- **Do not** include `user_assertion` in your tool's input schema definition
+- The authentication tokens are automatically injected by the system
+- Both authentication methods can be enabled simultaneously if needed
 
 ## Console Features
 
@@ -284,11 +337,27 @@ mcp:
 **Streamable HTTP servers** (HTTP-based):
 ```yaml
 mcp:
+  auth:
+    azure_ad:
+      tenant_id: "${AZURE_TENANT_ID}"
+      client_id: "${AZURE_CLIENT_ID}"
+      client_secret: "${AZURE_CLIENT_SECRET}"
+  
   servers:
-    remote_tool:
+    # Unauthenticated server
+    simple_tool:
       type: "streamable_http"
       url: "https://api.example.com/mcp"
       timeout: 15
+    
+    # S2S authenticated server
+    service_tool:
+      type: "streamable_http"
+      url: "https://service-api.example.com/mcp"
+      auth:
+        enable_s2s: true
+        enable_user_assertion: true
+        scope: "c3d4e5f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f/user.read"
 ```
 
 ## CLI Commands
@@ -315,6 +384,13 @@ Configure using environment variables:
 # OpenAI Configuration
 export OPENAI_API_KEY="your-api-key"
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
+
+# Azure AD Configuration (for MCP server authentication)
+export AZURE_TENANT_ID="your-tenant-id"
+export AZURE_CLIENT_ID="your-client-id"
+export AZURE_CLIENT_SECRET="your-client-secret"
+# OR use certificate instead:
+# export AZURE_CERTIFICATE_PEM="your-certificate-pem-content"
 
 # Optional: Agent Factory Settings
 export AGENT_FACTORY__MODEL_SELECTION="cost"  # first, cost, latency, quality

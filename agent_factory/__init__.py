@@ -12,6 +12,9 @@ from .core import (
     ServiceRegistry,
 )
 
+# Import MCP server auth functionality
+from .mcp_server.auth import CURRENT_AUTH_CONTEXT, AuthContext, S2SAuth
+
 try:
     __version__ = _v("semantic-kernel-agent-factory")
 except Exception:
@@ -33,6 +36,10 @@ __all__ = [
     "ModelSettings",
     "ModelSelectStrategy",
     "ResponseSchema",
+    # Auth classes
+    "AuthContext",
+    "CURRENT_AUTH_CONTEXT",
+    "S2SAuth",
     # Version
     "__version__",
 ]

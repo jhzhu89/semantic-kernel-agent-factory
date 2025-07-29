@@ -4,22 +4,9 @@ from pydantic import BaseModel
 
 
 class AuthConfig(BaseModel):
-    enabled: bool = False
-    type: str = "bearer"
+    enable_s2s: bool = False
+    enable_user_assertion: bool = True
     scope: str
-
-
-class AzureAdConfig(BaseModel):
-    certificate_pem: Optional[str] = None
-    client_secret: Optional[str] = None
-
-
-class OnBehalfOfAuth(BaseModel):
-    azure_ad: Optional[AzureAdConfig] = None
-
-
-class MCPAuthConfig(BaseModel):
-    on_behalf_of: Optional[OnBehalfOfAuth] = None
 
 
 class MCPServerConfig(BaseModel):
@@ -31,6 +18,17 @@ class MCPServerConfig(BaseModel):
     env: Dict[str, str] = {}
     description: Optional[str] = None
     auth: Optional[AuthConfig] = None
+
+
+class AzureAdConfig(BaseModel):
+    certificate_pem: Optional[str] = None
+    client_secret: Optional[str] = None
+    tenant_id: str
+    client_id: str
+
+
+class MCPAuthConfig(BaseModel):
+    azure_ad: Optional[AzureAdConfig] = None
 
 
 class MCPConfig(BaseModel):

@@ -70,13 +70,12 @@ class AgentFactory:
             self._config.mcp
             and self._config.mcp.servers
             and self._config.mcp.auth
-            and self._config.mcp.auth.on_behalf_of
-            and self._config.mcp.auth.on_behalf_of.azure_ad
+            and self._config.mcp.auth.azure_ad
         ):
-            from ..mcp_server.auth.filters import create_on_behalf_of_auth_filter
+            from ..mcp_server.auth.obo_auth_filter import create_obo_auth_filter
 
-            obo_filter = create_on_behalf_of_auth_filter(
-                self._config.mcp.servers, self._config.mcp.auth.on_behalf_of.azure_ad
+            obo_filter = create_obo_auth_filter(
+                self._config.mcp.servers, self._config.mcp.auth.azure_ad
             )
             self._kernel.add_filter(FilterTypes.FUNCTION_INVOCATION, obo_filter)
 
@@ -84,12 +83,8 @@ class AgentFactory:
             MCPProvider(
                 self._config.mcp.servers if self._config.mcp else {},
                 (
-                    self._config.mcp.auth.on_behalf_of.azure_ad
-                    if (
-                        self._config.mcp
-                        and self._config.mcp.auth
-                        and self._config.mcp.auth.on_behalf_of
-                    )
+                    self._config.mcp.auth.azure_ad
+                    if (self._config.mcp and self._config.mcp.auth)
                     else None
                 ),
             )

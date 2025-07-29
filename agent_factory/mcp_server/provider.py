@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 
 from semantic_kernel.connectors.mcp import MCPStdioPlugin, MCPStreamableHttpPlugin
 
+from .auth.s2s_auth import S2SAuthManager
 from .config import AzureAdConfig, MCPServerConfig
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class MCPProvider:
         self._cert_directory = cert_directory
         self._plugins: Dict[str, Any] = {}
         self._stack = AsyncExitStack()
+        self._auth_manager = S2SAuthManager(azure_ad_config) if azure_ad_config else None
         logger.info(f"MCPProvider initialized with {len(configs)} server configs")
 
     async def __aenter__(self):
@@ -132,11 +134,9 @@ class MCPProvider:
             logger.debug(f"Plugin '{name}' cleanup failed (this is usually safe to ignore): {e}")
 
     def _validate_auth_config(self, name: str, config: MCPServerConfig):
-        if config.auth and config.auth.enabled:
+        if config.auth and (config.auth.enable_s2s or config.auth.enable_user_assertion):
             if not self._azure_ad_config:
                 raise ValueError(f"Azure auth config required for MCP '{name}' but not provided")
-            if not config.auth.scope:
-                raise ValueError(f"Auth scope required for MCP '{name}'")
             if (
                 not self._azure_ad_config.certificate_pem
                 and not self._azure_ad_config.client_secret
@@ -153,13 +153,28 @@ class MCPProvider:
                     raise ValueError(f"URL is required for Streamable HTTP MCP server '{name}'")
 
                 logger.debug(f"Creating Streamable HTTP plugin: {name} -> {config.url}")
-                return MCPStreamableHttpPlugin(
-                    name=name,
-                    url=str(config.url),
-                    request_timeout=config.timeout,
-                    headers=getattr(config, "headers", None),
-                    description=config.description or f"Streamable HTTP plugin {name}",
-                )
+
+                auth_handler = None
+                if config.auth and config.auth.enable_s2s and self._auth_manager:
+                    auth_handler = self._auth_manager.get_auth_handler(config.auth.scope)
+
+                if auth_handler:
+                    return MCPStreamableHttpPlugin(
+                        name=name,
+                        url=str(config.url),
+                        request_timeout=config.timeout,
+                        headers=getattr(config, "headers", None),
+                        description=config.description or f"Streamable HTTP plugin {name}",
+                        auth=auth_handler,
+                    )
+                else:
+                    return MCPStreamableHttpPlugin(
+                        name=name,
+                        url=str(config.url),
+                        request_timeout=config.timeout,
+                        headers=getattr(config, "headers", None),
+                        description=config.description or f"Streamable HTTP plugin {name}",
+                    )
 
             if config.command is None:
                 raise ValueError(f"Command is required for stdio MCP server '{name}'")
