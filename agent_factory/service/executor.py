@@ -182,7 +182,7 @@ class SemanticKernelAgentExecutor(AgentExecutor):
                 logger.debug(f"Streaming chunk: {content}")
 
                 artifact = new_text_artifact(name="streamed_text", text=content)
-                artifact.artifactId = artifact_id
+                artifact.artifact_id = artifact_id
                 await self._enqueue_artifact(event_queue, task, artifact, append=not is_first_chunk)
 
                 is_first_chunk = False
@@ -190,7 +190,7 @@ class SemanticKernelAgentExecutor(AgentExecutor):
 
         if has_sent_any_chunk and task.id not in self._cancelled_tasks:
             artifact = new_text_artifact(name="streamed_text", text="")
-            artifact.artifactId = artifact_id
+            artifact.artifact_id = artifact_id
             await self._enqueue_artifact(event_queue, task, artifact, append=True, last_chunk=True)
 
         self._log_thread_messages(thread)

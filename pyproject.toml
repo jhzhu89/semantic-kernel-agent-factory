@@ -63,7 +63,7 @@ console = [
 
 # Service factory dependencies (AgentServiceFactory)
 service = [
-    "a2a-sdk>=0.2.4",
+    "a2a-sdk>=0.3.9",
     "starlette>=0.46.2",
 ]
 
