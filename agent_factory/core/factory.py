@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from contextlib import AsyncExitStack
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from pydantic import BaseModel, Field, create_model
 from semantic_kernel import Kernel
@@ -60,6 +60,12 @@ class AgentFactory:
     def get_all_agents(self) -> Dict[str, ChatCompletionAgent]:
         return self._agents.copy()
 
+    def apply_filter(self, func: Callable[[Kernel], Any]) -> None:
+        if self._kernel:
+            func(self._kernel)
+        for agent in self._agents.values():
+            func(agent.kernel)
+
     async def _initialize(self):
         if self._kernel is not None:
             return
@@ -93,44 +99,51 @@ class AgentFactory:
         for config in self._config.agents.values():
             await self._create_agent(config)
 
-    async def _create_agent(self, config: AgentConfig):
+    async def _create_agent(self, config: AgentConfig) -> None:
         if config.name is None:
             raise ValueError("Agent config must have a name")
 
-        service_id = config.model or self._registry.select(self._config.model_selection)
+        agent_kernel = Kernel()
+        if self._kernel is not None:
+            agent_kernel.services.update(self._kernel.services)
+            agent_kernel.auto_function_invocation_filters.extend(
+                self._kernel.auto_function_invocation_filters
+            )
+            agent_kernel.function_invocation_filters.extend(
+                self._kernel.function_invocation_filters
+            )
+            agent_kernel.prompt_rendering_filters.extend(self._kernel.prompt_rendering_filters)
 
+        try:
+            from semantic_kernel.core_plugins import TimePlugin
+
+            agent_kernel.add_plugin(TimePlugin(), plugin_name="time")
+        except Exception:
+            pass
+
+        plugins: Optional[List[Any]] = None
+        if config.mcp_servers and self._provider:
+            plugin_list = [
+                self._provider.get_plugin(n)
+                for n in config.mcp_servers
+                if self._provider.get_plugin(n)
+            ]
+            if plugin_list:
+                plugins = plugin_list
+                if len(plugin_list) < len(config.mcp_servers):
+                    failed = [n for n in config.mcp_servers if not self._provider.get_plugin(n)]
+                    logger.warning(f"Agent '{config.name}': MCP servers {failed} not connected")
+
+        service_id = config.model or self._registry.select(self._config.model_selection)
         self._response_models[config.name] = self._create_response_model(config)
         self._service_ids[config.name] = service_id
 
-        settings = self._create_execution_settings(config, service_id)
-        plugins: Optional[List[Any]] = None
-        if config.mcp_servers and self._provider is not None:
-            plugins = []
-            failed_plugins = []
-
-            for name in config.mcp_servers:
-                plugin = self._provider.get_plugin(name)
-                if plugin is not None:
-                    plugins.append(plugin)
-                else:
-                    failed_plugins.append(name)
-
-            if failed_plugins:
-                logger.warning(
-                    f"Agent '{config.name}': MCP servers {failed_plugins} are not connected and will be skipped. "
-                    f"Connected plugins: {[name for name in config.mcp_servers if name not in failed_plugins]}"
-                )
-
-            # If no plugins are available, set plugins to None
-            if not plugins:
-                plugins = None
-
         start_time = time.perf_counter()
         agent = ChatCompletionAgent(
-            arguments=KernelArguments(settings),
+            arguments=KernelArguments(self._create_execution_settings(config, service_id)),
             name=config.name,
             instructions=config.instructions,
-            kernel=self._kernel,
+            kernel=agent_kernel,
             plugins=plugins,
         )
 

@@ -23,8 +23,6 @@ class ServiceRegistry:
             kernel.add_service(service)
             if config.model is not None:
                 self._services[config.model] = service
-
-        self._add_builtin_plugins(kernel)
         return kernel
 
     def _create_service(self, config: AzureOpenAIConfig) -> AzureChatCompletion:
@@ -77,17 +75,6 @@ class ServiceRegistry:
         except Exception as e:
             logger.info(f"Azure credential authentication failed: {e}")
             raise
-
-    def _add_builtin_plugins(self, kernel: Kernel):
-        try:
-            from semantic_kernel.core_plugins import TimePlugin
-
-            kernel.add_plugin(TimePlugin(), plugin_name="time")
-            logger.debug("Added TimePlugin to kernel as 'time'")
-        except ImportError:
-            logger.debug("TimePlugin not available, skipping")
-        except Exception as e:
-            logger.debug(f"Failed to add TimePlugin: {e}")
 
     def select(self, strategy: ModelSelectStrategy) -> str:
         service_names = list(self._services.keys())
