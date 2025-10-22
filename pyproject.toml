@@ -26,8 +26,8 @@ keywords = ["semantic-kernel", "agent", "mcp", "server", "factory", "sdk", "serv
 requires-python = ">=3.11"
 dependencies = [
     # Core MCP and semantic kernel functionality
-    "mcp>=1.9.3",
-    "semantic-kernel>=1.33.0",
+    "mcp>=1.16.0",
+    "semantic-kernel>=1.37.0",
     "pydantic>=2.11.4", 
     "pydantic-settings>=2.9.1",
     

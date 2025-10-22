@@ -61,6 +61,7 @@ class AgentConfig(BaseModel):
     mcp_servers: List[str] = Field(default_factory=list)
     model: Optional[str] = None
     model_settings: Optional[ModelSettings] = None
+    max_auto_invoke_attempts: int = 20
 
 
 class AgentFactoryConfig(BaseSettings):

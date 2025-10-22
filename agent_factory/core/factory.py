@@ -156,7 +156,9 @@ class AgentFactory:
     ) -> AzureChatPromptExecutionSettings:
         settings = AzureChatPromptExecutionSettings(
             service_id=service_id,
-            function_choice_behavior=FunctionChoiceBehavior.Auto(),
+            function_choice_behavior=FunctionChoiceBehavior.Auto(
+                maximum_auto_invoke_attempts=config.max_auto_invoke_attempts
+            ),
         )
 
         if config.model_settings:
