@@ -139,12 +139,15 @@ class AgentFactory:
         self._service_ids[config.name] = service_id
 
         start_time = time.perf_counter()
+        execution_settings = self._create_execution_settings(config, service_id)
+
         agent = ChatCompletionAgent(
-            arguments=KernelArguments(self._create_execution_settings(config, service_id)),
+            arguments=KernelArguments(execution_settings),
             name=config.name,
             instructions=config.instructions,
             kernel=agent_kernel,
             plugins=plugins,
+            function_choice_behavior=execution_settings.function_choice_behavior,
         )
 
         self._agents[config.name] = agent
